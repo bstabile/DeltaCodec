@@ -1,0 +1,13 @@
+extensions: designer.cs generated.cs
+extensions: .cs
+#region License
+
+// Namespace : %Namespace%
+// FileName  : %FileName%
+// Created   : %CreationYear%-%CreationMonth%-%CreationDay%
+// Author    : Bennett R. Stabile 
+// Copyright : Stability Systems LLC, %CurrentYear%
+// License   : GPL v3
+// Website   : http://DeltaCodec.CodePlex.com
+
+#endregion // License

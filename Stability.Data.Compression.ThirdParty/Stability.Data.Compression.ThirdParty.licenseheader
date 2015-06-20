@@ -1,0 +1,21 @@
+extensions: designer.cs generated.cs
+extensions: .cs
+#region Derivative Work License (%Project%)
+
+// Disclaimer: All of the compression algorithms in this assembly are the work of others.
+//             They are aggregated here to provide an easy way to learn about and test
+//             alternative techniques. In the subfolders "Internal\<libname>" you will
+//             find the minimal subset of files needed to expose each algorithm.
+//             In the "Licenses" folder you will find the licensing information for each
+//             of the third-party libraries. Those licenses (if more restrictive than
+//             GPL v3) are meant to override.
+//
+// Namespace : %Namespace%
+// FileName  : %FileName%
+// Created   : %CreationYear%-%CreationMonth%-%CreationDay%
+// Author    : Bennett R. Stabile (Original and Derivative Work)
+// Copyright : Stability Systems LLC, %CurrentYear%
+// License   : GPL v3
+// Website   : http://DeltaCodec.CodePlex.com
+
+#endregion // Derivative Work License (%Project%)

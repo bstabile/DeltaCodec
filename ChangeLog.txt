@@ -1,0 +1,38 @@
+DeltaCodec ChangeLog
+
+Bennett R. Stabile (BRS)
+Stability Systems LLC
+
+2015-06-20
+v1.3 - Added Boolean and DateTimeOffset to the list of data types supported. Changed Struple
+       tests so that all 15 supported types are tested at the same time in "Struple_15".
+       All of the changes are non-breaking in the sense that encoded data can still be decoded
+       without any problem. The interfaces have changed so that previous derivations may need
+       to be updated.
+
+2015-06-15
+v1.2 - Cleaned up the "Struple" implementation which involved breaking changes in EncodingArgs
+       and some other small things. The tests were reworked to use reflection to simplify handling
+       the generic EncodingArgs. Sorry to break things like this but the sooner the better!
+
+2015-06-15
+v1.1 - Added some simple "Struple" examples showing how to handle more complex data structures.
+       A struple is just a tuple defined as a structure instead of a class. It allows up to 15
+       fields of intrinsic data types (new Struple<T1, T2, ..., T15> where T : struct).
+       Essentially, this just shows how to serialize multiple vectors and add the header 
+       information needed to decode the entire set. It is highly recommended to instead handle
+       your own data structures or classes in concrete codec derivations. But for ad hoc usage
+       these additional methods can be handy in a pinch. 
+       Check out the new tests added for this functionality. They're crude but they work. :-)
+       Although this should not break any existing code, there was a small change to the top-level
+       headers. The "numBlocks" was integer in the previous version. But it was changed to byte in
+       the new version. That's because it would be extremely rare to encode more than 255 blocks in
+       parallel. That leaves 3 bytes free. One of those bytes we now use to store the number of
+       vectors that are encoded. That means you can encode data structures with up to 255 fields.
+       The remaining two bytes we reserve as "flags". These are different than the lower-level
+       "block flags". Study the sources to understand more about this. It's definitely NOT very
+       complicated.
+
+
+2015-06-11
+v1.0 - Initial release
