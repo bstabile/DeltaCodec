@@ -49,11 +49,10 @@ namespace Stability.Data.Compression.Utility
             {
                 var offset = i * size;
                 var ubound = i == numRanges - 1 ? count : offset + size;
-                ranges.Add(new Range32(offset, ubound));
+                ranges.Add(new Range32(i, offset, ubound));
             }
             return ranges;
         }
-
         public static IList<Range64> Create(long inclusiveStart, long exclusiveStop, int numRanges)
         {
             if (inclusiveStart < 0)
@@ -74,56 +73,7 @@ namespace Stability.Data.Compression.Utility
             {
                 var offset = i * size;
                 var ubound = i == numRanges - 1 ? count : offset + size;
-                ranges.Add(new Range64(offset, ubound));
-            }
-            return ranges;
-        }
-
-        public static IList<IndexedRange32> CreateIndexed(int inclusiveStart, int exclusiveStop, int numRanges)
-        {
-            if (inclusiveStart < 0)
-                throw new ArgumentException("The lower bound must be >= 0", "inclusiveStart");
-            if (exclusiveStop < 0)
-                throw new ArgumentException("The upper bound must be > 0", "exclusiveStop");
-            if (inclusiveStart > exclusiveStop)
-                throw new ArgumentException("The lower bound cannot be greater than the upper bound!", "inclusiveStart");
-            if (numRanges < 0)
-                throw new ArgumentException("The number of ranges requested must be non-negative.", "numRanges");
-
-            var ranges = new List<IndexedRange32>(numRanges);
-            var count = exclusiveStop - inclusiveStart;
-            var baseSize = count / numRanges;
-            var remainder = (count - numRanges * baseSize) / numRanges;
-            var size = baseSize + remainder;
-            for (var i = 0; i < numRanges; i++)
-            {
-                var offset = i * size;
-                var ubound = i == numRanges - 1 ? count : offset + size;
-                ranges.Add(new IndexedRange32(i, offset, ubound));
-            }
-            return ranges;
-        }
-        public static IList<IndexedRange64> CreateIndexed(long inclusiveStart, long exclusiveStop, int numRanges)
-        {
-            if (inclusiveStart < 0)
-                throw new ArgumentException("The lower bound must be >= 0", "inclusiveStart");
-            if (exclusiveStop < 0)
-                throw new ArgumentException("The upper bound must be > 0", "exclusiveStop");
-            if (inclusiveStart > exclusiveStop)
-                throw new ArgumentException("The lower bound cannot be greater than the upper bound!", "inclusiveStart");
-            if (numRanges < 0)
-                throw new ArgumentException("The number of ranges requested must be non-negative.", "numRanges");
-
-            var ranges = new List<IndexedRange64>(numRanges);
-            var count = exclusiveStop - inclusiveStart;
-            var baseSize = count / numRanges;
-            var remainder = (count - numRanges * baseSize) / numRanges;
-            var size = baseSize + remainder;
-            for (var i = 0; i < numRanges; i++)
-            {
-                var offset = i * size;
-                var ubound = i == numRanges - 1 ? count : offset + size;
-                ranges.Add(new IndexedRange64(i, offset, ubound));
+                ranges.Add(new Range64(i, offset, ubound));
             }
             return ranges;
         }
@@ -132,43 +82,7 @@ namespace Stability.Data.Compression.Utility
     [StructLayout(LayoutKind.Explicit)]
     public struct Range32
     {
-        public Range32(int inclusiveStart, int exclusiveStop)
-        {
-            _inclusiveStart = inclusiveStart;
-            _exclusiveStop = exclusiveStop;
-        }
-
-        [FieldOffset(0)]
-        private readonly int _inclusiveStart;
-        [FieldOffset(4)]
-        private readonly int _exclusiveStop;
-
-        public int InclusiveStart { get { return _inclusiveStart;} }
-        public int ExclusiveStop { get { return _exclusiveStop; } }
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    public struct Range64
-    {
-        public Range64(long inclusiveStart, long exclusiveStop)
-        {
-            _inclusiveStart = inclusiveStart;
-            _exclusiveStop = exclusiveStop;
-        }
-
-        [FieldOffset(0)]
-        private readonly long _inclusiveStart;
-        [FieldOffset(8)]
-        private readonly long _exclusiveStop;
-
-        public long InclusiveStart { get { return _inclusiveStart; } }
-        public long ExclusiveStop { get { return _exclusiveStop; } }
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    public struct IndexedRange32
-    {
-        public IndexedRange32(int index, int inclusiveStart, int exclusiveStop)
+        public Range32(int index, int inclusiveStart, int exclusiveStop)
         {
             _index = index;
             _inclusiveStart = inclusiveStart;
@@ -188,9 +102,9 @@ namespace Stability.Data.Compression.Utility
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct IndexedRange64
+    public struct Range64
     {
-        public IndexedRange64(int index, long inclusiveStart, long exclusiveStop)
+        public Range64(int index, long inclusiveStart, long exclusiveStop)
         {
             _index = index;
             _inclusiveStart = inclusiveStart;

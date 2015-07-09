@@ -25,6 +25,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using Stability.Data.Compression.Utility;
 
 namespace Stability.Data.Compression.TestUtility
@@ -428,6 +430,7 @@ namespace Stability.Data.Compression.TestUtility
             {typeof(ushort), list => DeltaEntropy((IList<ushort>) list, (a, b) => (ushort)(a - b))},
             {typeof(sbyte), list => DeltaEntropy((IList<sbyte>) list, (a, b) => (sbyte)(a - b))},
             {typeof(byte), list => DeltaEntropy((IList<byte>) list, (a, b) => (byte)(a - b))},
+            {typeof(char), list => DeltaEntropy((IList<char>) list, (a, b) => (char)((short) a - (short) b))},
        };
 
         /// <summary>
@@ -437,12 +440,16 @@ namespace Stability.Data.Compression.TestUtility
         /// The "true generic" method accepts a Func to perform the differencing op.
         /// </summary>
         public static double DeltaEntropy<T>(IList<T> list)
-            where T : struct, IComparable<T>, IEquatable<T>
+            where T : IComparable<T>, IEquatable<T>
         {
             // Special case for Boolean list
             if (typeof (T) == typeof (bool))
             {
                 return DeltaEntropy((IList<bool>) list);
+            }
+            if (typeof (T) == typeof (char))
+            {
+                return DeltaEntropy((IList<char>) list);
             }
             return DeltaEntropyFuncMap[typeof(T)].Invoke(list);
         }
@@ -464,6 +471,20 @@ namespace Stability.Data.Compression.TestUtility
                 return DeltaEntropy(arr, (a, b) => (byte)(a - b));
 
             }
+        }
+
+        /// <summary>
+        /// Boolean is a special case. We need to convert these to single bits,
+        /// write them to a stream and find DeltaEntropy for the bytes.
+        /// </summary>
+        private static double DeltaEntropy(IList<char> list)
+        {
+            var arr = new short[list.Count];
+            Parallel.For(0, list.Count, i =>
+            {
+                arr[i] = (short) list[i];
+            });
+            return DeltaEntropy(arr, (a, b) => (short)(a - b));
         }
 
         /// <summary>

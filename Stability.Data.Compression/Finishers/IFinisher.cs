@@ -58,6 +58,14 @@ namespace Stability.Data.Compression.Finishers
         byte[] Encode(IList<TimeSpan> list, CompressionLevel level);
         IList<TimeSpan> DecodeTimeSpan(byte[] bytes);
 
+        // Char and String
+        byte[] Encode(IList<char> list, CompressionLevel level);
+        IList<char> DecodeChar(byte[] bytes);
+
+        byte[] Encode(IList<string> list, CompressionLevel level);
+        IList<string> DecodeString(byte[] bytes);
+
+
         // Streams
         byte[] Encode(MemoryStream input, CompressionLevel level = CompressionLevel.Optimal);
         MemoryStream EncodeToStream(MemoryStream input, CompressionLevel level = CompressionLevel.Optimal);

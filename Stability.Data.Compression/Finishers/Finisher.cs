@@ -53,7 +53,10 @@ namespace Stability.Data.Compression.Finishers
                 {typeof (float), (a, l) => Encode((IList<float>) a, l)},
                 {typeof (double), (a, l) => Encode((IList<double>) a, l)},
                 {typeof (decimal), (a, l) => Encode((IList<decimal>) a, l)},
-
+                // Char
+                {typeof (char), (a, l) => Encode((IList<char>) a, l)},
+                // String
+                {typeof (string), (a, l) => Encode((IList<string>) a, l)},
             };
 
             _decodeFuncMap = new Dictionary<Type, Func<byte[], object>>
@@ -547,6 +550,74 @@ namespace Stability.Data.Compression.Finishers
             }
         }
 
+        public byte[] Encode(char[] data, CompressionLevel level = CompressionLevel.Fastest)
+        {
+            using (var ms = new MemoryStream(data.Length * 2))
+            {
+                using (var writer = new BinaryWriter(ms))
+                {
+                    for (var i = 0; i < data.Length; i++)
+                    {
+                        writer.Write((ushort) data[i]);
+                    }
+                    writer.Flush();
+                    return Encode(ms, level);
+                }
+            }
+        }
+
+        public byte[] Encode(IList<char> data, CompressionLevel level = CompressionLevel.Fastest)
+        {
+            using (var ms = new MemoryStream(data.Count * 2))
+            {
+                using (var writer = new BinaryWriter(ms))
+                {
+                    for (var i = 0; i < data.Count; i++)
+                    {
+                        writer.Write((ushort) data[i]);
+                    }
+                    writer.Flush();
+                    return Encode(ms, level);
+                }
+            }
+        }
+
+        public byte[] Encode(string[] data, CompressionLevel level = CompressionLevel.Fastest)
+        {
+            // We don't know the appropriate capacity since strings are variable length.
+            // We'll just go on the assumption that strings average at least 1 char each.
+            using (var ms = new MemoryStream(data.Length * 2))
+            {
+                using (var writer = new BinaryWriter(ms))
+                {
+                    for (var i = 0; i < data.Length; i++)
+                    {
+                        writer.Write(data[i]);
+                    }
+                    writer.Flush();
+                    return Encode(ms, level);
+                }
+            }
+        }
+
+        public byte[] Encode(IList<string> data, CompressionLevel level = CompressionLevel.Fastest)
+        {
+            // We don't know the appropriate capacity since strings are variable length.
+            // We'll just go on the assumption that strings average at least 1 char each.
+            using (var ms = new MemoryStream(data.Count * 2))
+            {
+                using (var writer = new BinaryWriter(ms))
+                {
+                    for (var i = 0; i < data.Count; i++)
+                    {
+                        writer.Write(data[i]);
+                    }
+                    writer.Flush();
+                    return Encode(ms, level);
+                }
+            }
+        }
+
         public byte[] Encode(MemoryStream input, CompressionLevel level = CompressionLevel.Fastest)
         {
             input.Position = 0;
@@ -797,6 +868,36 @@ namespace Stability.Data.Compression.Finishers
                 for (var i = 0; i < n; i++)
                 {
                     list.Add(new TimeSpan(reader.ReadInt64()));
+                }
+                return list;
+            }
+        }
+
+        public IList<char> DecodeChar(byte[] data)
+        {
+            using (var stream = DecodeToStream(data))
+            {
+                var n = (int) (stream.Length / 2);
+                var list = new List<char>(n);
+                var reader = new BinaryReader(stream);
+                for (var i = 0; i < n; i++)
+                {
+                    list.Add((char) reader.ReadUInt16());
+                }
+                return list;
+            }
+        }
+
+        public IList<String> DecodeString(byte[] data)
+        {
+            using (var stream = DecodeToStream(data))
+            {
+                var n = (int)(stream.Length / 2);
+                var list = new List<string>(n);
+                var reader = new BinaryReader(stream);
+                for (var i = 0; i < n; i++)
+                {
+                    list.Add(reader.ReadString());
                 }
                 return list;
             }

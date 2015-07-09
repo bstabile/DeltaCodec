@@ -64,15 +64,10 @@ namespace Stability.Data.Compression.Utility
 				// if no more bits then shift valid ones and return
 				if (bit == -1)
 				{
-					bits >>= (31 - i);
 					return bits;
 				}
-			    bits |= (uint)(bit << 31);
-			    if ( i != 31) // don't shift for last bit!
-					bits >>= 1;
+			    bits |= (uint)(bit << i);
 			}
-			// shift for unused bits
-			bits >>= (31 - numBits);
 			return bits; // OK
 		}
 	}

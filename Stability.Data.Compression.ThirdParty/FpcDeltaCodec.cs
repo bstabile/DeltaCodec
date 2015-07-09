@@ -17,6 +17,7 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // Derivative Work License (Stability.Data.Compression.ThirdParty)
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +25,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using Stability.Data.Compression.DataStructure;
 using Stability.Data.Compression.Finishers;
 using Stability.Data.Compression.Transforms;
 using Stability.Data.Compression.Utility;
@@ -39,7 +41,7 @@ namespace Stability.Data.Compression.ThirdParty
         /// even though it is not truly generic. FPC only encodes lists of doubles, so
         /// we need to override the "fake" generic mapping in the base class.
         /// </summary>
-        private readonly IDictionary<Type, Func<object, int, CompressionLevel, object, Monotonicity, byte[]>> _encodeFuncMap;
+        private readonly IDictionary<Type, Func<IEncodingArgs, byte[]>> _encodeFuncMap;
 
         /// <summary>
         /// The function maps provide the ability to use the codec in a generic manner
@@ -68,9 +70,9 @@ namespace Stability.Data.Compression.ThirdParty
         private FpcDeltaCodec(IFinisher defaultFinisher)
             : base(defaultFinisher)
         {
-            _encodeFuncMap = new Dictionary<Type, Func<object, int, CompressionLevel, object, Monotonicity, byte[]>>
+            _encodeFuncMap = new Dictionary<Type, Func<IEncodingArgs, byte[]>>
             {
-                {typeof (double), (a, n, l, g, m) => Encode((IList<double>) a, n, l, (double) g, m)},
+                {typeof (double), (a) => Encode((NumericEncodingArgs<double>) a)},
             };
             _decodeFuncMap = new Dictionary<Type, Func<byte[], object>>
             {
@@ -103,15 +105,11 @@ namespace Stability.Data.Compression.ThirdParty
 
         #region Generic Encode<T> and Decode<T> Overrides
 
-        public override byte[] Encode<T>(IList<T> list,
-            int numBlocks = 1,
-            CompressionLevel level = CompressionLevel.Fastest,
-            T? granularity = null,
-            Monotonicity monotonicity = Monotonicity.None)
+        public override byte[] Encode<T>(NumericEncodingArgs<T> args) 
         {
             try
             {
-                return _encodeFuncMap[typeof(T)].Invoke(list, numBlocks, level, granularity, monotonicity);
+                return _encodeFuncMap[typeof(T)].Invoke(args);
             }
             catch (Exception ex)
             {
@@ -179,14 +177,16 @@ namespace Stability.Data.Compression.ThirdParty
             {
                 Parallel.For(0, ranges.Count, r =>
                 {
-                    var start = ranges[r].InclusiveStart;
-                    var stop = ranges[r].ExclusiveStop;
+                    var range = ranges[r];
+                    var start = range.InclusiveStart;
+                    var stop = range.ExclusiveStop;
                     var block = new ArraySegment<double>(arr, start, stop - start);
 
                     // FPC TRANSFORM BEGIN
                     // We're doing our own compression here with no finisher, so we specify "NoCompression".
                     // That way, when we deserialize nothing is done (other than parsing the headers).
-                    var state = new DeltaBlockState<double>(block, CompressionLevel.NoCompression, granularity, monotonicity, DefaultFinisher);
+                    var state = new DeltaBlockState<double>(block, CompressionLevel.NoCompression, 
+                        granularity, monotonicity, DefaultFinisher, blockIndex: range.Index);
                     var tail = new double[list.Count - 1];
                     for (var i = 1; i < list.Count; i++)
                     {

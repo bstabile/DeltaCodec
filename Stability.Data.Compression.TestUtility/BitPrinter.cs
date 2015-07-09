@@ -50,6 +50,7 @@ namespace Stability.Data.Compression.TestUtility
             get { return _defaultSampleCount; }
             set { _defaultSampleCount = value > 0 ? value : 0; }
         }
+
         #endregion // Static Defaults
 
         #region Private Static Func Maps
@@ -72,6 +73,7 @@ namespace Stability.Data.Compression.TestUtility
             {typeof(DateTime), (v,s) =>Print((DateTime)v, s)},
             {typeof(TimeSpan), (v,s) =>Print((TimeSpan)v, s)},
             {typeof(BigInteger), (v,s) =>Print((BigInteger)v, s)},
+            {typeof(char), (v,s)=> Print((char)v, s)},
         };
         private static readonly IDictionary<Type, Func<object, string, string>> ListFuncMap = new Dictionary<Type, Func<object, string, string>>
         {
@@ -90,6 +92,8 @@ namespace Stability.Data.Compression.TestUtility
             {typeof(DateTime), (v,s) => Print((IList<DateTime>)v, s)},
             {typeof(TimeSpan), (v,s) => Print((IList<TimeSpan>)v, s)},
             {typeof(decimal), (v,s) => Print((IList<decimal>)v, s)},
+            {typeof(BigInteger), (v,s) => Print((IList<BigInteger>)v, s)},
+            {typeof(char), (v,s) => Print((IList<char>)v, s)},
         };
 
         private static readonly IDictionary<Type, Func<object, string, string, int, int, string>> SamplesFuncMap = new Dictionary
@@ -110,6 +114,8 @@ namespace Stability.Data.Compression.TestUtility
             {typeof (DateTimeOffset), (v, s1, s2, i1, i2) => PrintSamples((IList<DateTimeOffset>) v, s1, s2, i1, i2)},
             {typeof (DateTime), (v, s1, s2, i1, i2) => PrintSamples((IList<DateTime>) v, s1, s2, i1, i2)},
             {typeof (TimeSpan), (v, s1, s2, i1, i2) => PrintSamples((IList<TimeSpan>) v, s1, s2, i1, i2)},
+            {typeof (BigInteger), (v, s1, s2, i1, i2) => PrintSamples((IList<BigInteger>) v, s1, s2, i1, i2)},
+            {typeof (char), (v, s1, s2, i1, i2) => PrintSamples((IList<char>) v, s1, s2, i1, i2)},
         };
 
         #endregion // Private Static Func Maps
@@ -287,6 +293,12 @@ namespace Stability.Data.Compression.TestUtility
             return sb.ToString();
         }
 
+        public static string Print(char v, string byteSeparator = null)
+        {
+            return Print((ushort)v, byteSeparator);
+        }
+
+
         #endregion // Print Primitive Types
 
         #region Print IList Types
@@ -400,6 +412,13 @@ namespace Stability.Data.Compression.TestUtility
         {
             var sb = new StringBuilder();
             sb = data.Aggregate(sb, (current, t) => current.AppendLine(Print(t, byteSeparator)));
+            return sb.ToString();
+        }
+
+        public static string Print(IList<char> data, string byteSeparator = null)
+        {
+            var sb = new StringBuilder();
+            sb = data.Aggregate(sb, (current, v) => current.AppendLine(Print(v, byteSeparator)));
             return sb.ToString();
         }
 
@@ -1020,6 +1039,45 @@ namespace Stability.Data.Compression.TestUtility
             {
                 var s = string.Format(fmt,
                     list[i].ToString(valueFormat),
+                    Print(list[i], byteSeparator));
+                sb = sb.AppendFormat(s);
+            }
+            return sb.ToString();
+        }
+
+        public static string PrintSamples(
+             IList<char> list,
+             string valueFormat = null,
+             string byteSeparator = null,
+             int start = 0,
+             int count = 0
+            )
+        {
+            if (list.Count == 0)
+                return "\t<empty>";
+
+            count = count > 0 ? count : DefaultSampleCount;
+
+            if (count == 0) return string.Empty;
+
+            count = Math.Min(start + count, list.Count);
+
+            var vmax = 0;
+            for (var i = start; i < count; i++)
+            {
+                var vlen = list[i].ToString().Length;
+                if (vlen > vmax)
+                    vmax = vlen;
+            }
+
+            var fmt = string.Format("{0}0, {1}{2} | {3}1{4}\n",
+                "{", vmax, "}", "{", "}");
+
+            var sb = new StringBuilder();
+            for (var i = start; i < count; i++)
+            {
+                var s = string.Format(fmt,
+                    list[i],
                     Print(list[i], byteSeparator));
                 sb = sb.AppendFormat(s);
             }

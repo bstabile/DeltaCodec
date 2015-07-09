@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stability.Data.Compression.DataStructure;
 
 namespace Stability.Data.Compression.TestUtility
 {
@@ -25,21 +26,70 @@ namespace Stability.Data.Compression.TestUtility
         bool Underline { get; set; }
         CodecTestGroup Group { get; set; }
         int RunnerId { get; set; }
-        int Precision { get; set; }
         CodecTestStatistics Stats { get; }
         CompressionLevel Level { get; set; }
-        Monotonicity Monotonicity { get; set; }
-        FactorMode FactorMode { get; set; }
         int NumBlocks { get; set; }
         bool IsParallel { get; set; }
         bool Validate { get; set; }
         void Run();
     }
 
-    public class CodecTest<T> : ICodecTest
+    public abstract class CodecTest : ICodecTest
+    {
+        public IDeltaCodec Codec { get; protected set; }
+
+        public string DisplayName { get; set; }
+
+        public CodecTestGroup Group { get; set; }
+
+        public int RunnerId { get; set; }
+
+        public CompressionLevel Level { get; set; }
+
+        public int NumBlocks { get; set; }
+
+        public bool IsParallel { get; set; }
+
+        public bool Validate { get; set; }
+
+        public bool Underline { get; set; }
+
+        public CodecTestStatistics Stats { get; protected set; }
+
+        public abstract void Run();
+
+        public override string ToString()
+        {
+            return TestDisplay.ToString(this);
+        }
+    }
+
+    public interface ICodecStructTest : ICodecTest
+    {
+        int Precision { get; set; }
+
+        Monotonicity Monotonicity { get; set; }
+
+        FactorMode FactorMode { get; set; }
+    }
+
+    public abstract class CodecStructTest : CodecTest, ICodecStructTest
+    {
+        public int Precision { get; set; }
+
+        public Monotonicity Monotonicity { get; set; }
+
+        public FactorMode FactorMode { get; set; }
+
+    }
+
+    /// <summary>
+    /// Interface for "numeric" tests.
+    /// </summary>
+    public class CodecStructTest<T> : CodecStructTest
         where T : struct, IComparable<T>, IEquatable<T>
     {
-        public CodecTest(
+        public CodecStructTest(
             string displayName,
             IList<T> list,
             IDeltaCodec codec, 
@@ -67,12 +117,8 @@ namespace Stability.Data.Compression.TestUtility
             Monotonicity = monotonicity;
             Validate = validate;
 
-            Stats = new CodecTestStatistics(typeof (T), ListIn.Count);
+            Stats = new CodecTestStatistics(typeof (T), ListIn.Count, ListIn);
         }
-
-        #region Public Properties
-
-        public bool Underline { get; set; }
 
         public IList<T> ListIn { get; protected set; }
 
@@ -80,33 +126,7 @@ namespace Stability.Data.Compression.TestUtility
 
         public T Factor { get; protected set; }
 
-        public FactorMode FactorMode { get; set; }
-
-        public IDeltaCodec Codec { get; protected set; }
-
-        public string DisplayName { get; set; }
-
-        public CodecTestGroup Group { get; set; }
-
-        public int RunnerId { get; set; }
-
-        public CompressionLevel Level { get; set; }
-
-        public Monotonicity Monotonicity { get; set; }
-
-        public int NumBlocks { get; set; }
-
-        public bool IsParallel { get; set; }
-
-        public bool Validate { get; set; }
-
-        public int Precision { get; set; }
-
-        public CodecTestStatistics Stats { get; protected set; }
-
-        #endregion // Public Properties
-
-        public void Run()
+        public override void Run()
         {
             Stats.Reset();
             if (ListIn == null)
@@ -123,17 +143,8 @@ namespace Stability.Data.Compression.TestUtility
 
             GC.Collect(generation: 2, mode: GCCollectionMode.Forced, blocking: true);
 
-            // WARMUP BEGIN (JIT compile the codec and spin up the thread pool on sample of data)
-            if (arr.Length > 4)
-            {
-                var seg = new ArraySegment<T>(arr, 0, arr.Length / 4);
-                var tmp = Codec.Encode(seg);
-                Codec.Decode<T>(tmp);
-            }
-            // WARMUP END
-
             var stopwatch = Stopwatch.StartNew();
-            var bytes = Codec.Encode(arr, NumBlocks, Level, factor, Monotonicity);
+            var bytes = Codec.Encode(new NumericEncodingArgs<T>(arr, NumBlocks, Level, Factor, Monotonicity));
             Stats.ElapsedEncode = stopwatch.Elapsed;
 
             GC.Collect(generation: 2, mode: GCCollectionMode.Forced, blocking: true);
@@ -274,10 +285,91 @@ namespace Stability.Data.Compression.TestUtility
 
         #endregion // Validation
 
-        public override string ToString()
+    }
+
+    public class CodecClassTest<T> : CodecTest
+        where T : IComparable<T>, IEquatable<T>
+    {
+        public CodecClassTest(
+            string displayName,
+            IList<T> list,
+            IDeltaCodec codec,
+            CompressionLevel level = CompressionLevel.Fastest,
+            bool validate = true,
+            bool isParallel = false)
         {
-            return TestDisplay.ToString(this);
+            if (list == null)
+                throw new ArgumentNullException("list");
+            if (list.Count == 0)
+                throw new InvalidOperationException("The input list is empty!");
+
+            DisplayName = displayName;
+            Codec = codec;
+            ListIn = list;
+            IsParallel = isParallel;
+
+            Level = level;
+            Validate = validate;
+
+            Stats = new CodecTestStatistics(typeof(T), ListIn.Count, ListIn);
         }
-        
+
+        #region Public Properties
+
+        public IList<T> ListIn { get; protected set; }
+
+
+        #endregion // Public Properties
+
+        public override void Run()
+        {
+            Stats.Reset();
+            if (ListIn == null)
+                throw new InvalidOperationException("ListIn is null!");
+
+            var arr = ListIn.ToArray();
+
+            NumBlocks = IsParallel ? Environment.ProcessorCount * 1 : 1;
+
+            GC.Collect(generation: 2, mode: GCCollectionMode.Forced, blocking: true);
+
+            var stopwatch = Stopwatch.StartNew();
+            var bytes = Codec.Encode(new EncodingArgs<T>(arr, NumBlocks, Level));
+            Stats.ElapsedEncode = stopwatch.Elapsed;
+
+            GC.Collect(generation: 2, mode: GCCollectionMode.Forced, blocking: true);
+
+            stopwatch.Restart();
+            // Number of blocks is stored with the data, so parallelism is implicit
+            var listOut = Codec.Decode<T>(bytes);
+            Stats.ElapsedDecode = stopwatch.Elapsed;
+
+            stopwatch.Stop();
+
+            ValidateResults(arr, listOut);
+            Stats.Calc(bytes);
+
+            //ThreadPool.GetMinThreads(out minWorker, out minIOC);
+
+        }
+
+        public void ValidateResults(IList<T> listIn, IList<T> listOut)
+        {
+            if (!Validate) return;
+
+            Assert.IsNotNull(listIn);
+            Assert.IsNotNull(listOut);
+            Assert.AreEqual(listIn.Count, listOut.Count);
+
+            for (var i = 0; i < listIn.Count; i++)
+            {
+                if (!listIn[i].Equals(listOut[i]))
+                {
+                    var s = string.Format("{0} : ListIn = {1} ListOut = {2}", i, listIn[i], listOut[i]);
+                    Trace.WriteLine(s);
+                }
+                Assert.AreEqual(listIn[i], listOut[i]);
+            }
+        }
     }
 }

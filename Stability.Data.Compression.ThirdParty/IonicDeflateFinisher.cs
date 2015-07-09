@@ -17,14 +17,12 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // Derivative Work License (Stability.Data.Compression.ThirdParty)
-using System;
-using System.Collections.Generic;
+
 using System.IO;
-using System.Linq;
+using System.IO.Compression;
 using Stability.Data.Compression.Finishers;
-using IonicDeflateStream = Stability.Data.Compression.ThirdParty.Internal.DotNetZip.Zlib.DeflateStream;
 using CompressionMode = Stability.Data.Compression.ThirdParty.Internal.DotNetZip.Zlib.CompressionMode;
-using CompressionLevel = System.IO.Compression.CompressionLevel;
+using IonicDeflateStream = Stability.Data.Compression.ThirdParty.Internal.DotNetZip.Zlib.DeflateStream;
 
 namespace Stability.Data.Compression.ThirdParty
 {

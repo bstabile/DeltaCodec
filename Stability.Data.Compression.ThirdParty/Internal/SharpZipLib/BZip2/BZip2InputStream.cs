@@ -75,6 +75,7 @@ namespace Stability.Data.Compression.ThirdParty.Internal.SharpZipLib.BZip2
 		const int NO_RAND_PART_C_STATE = 7;
 		#endregion
 		#region Constructors
+
 		/// <summary>
 		/// Construct instance for reading from stream
 		/// </summary>

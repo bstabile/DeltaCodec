@@ -44,7 +44,8 @@
     <Compile Include="BitPrinter.cs" />
     <Compile Include="CodecTestGroup.cs" />
     <Compile Include="PrefabLists.cs" />
-    <Compile Include="StrupleTest.cs" />
+    <Compile Include="TestHelper.cs" />
+    <Compile Include="MultiFieldTest.cs" />
     <Compile Include="TestGroupType.cs" />
     <Compile Include="CodecTestStatistics.cs" />
     <Compile Include="DescriptiveStatistics.cs" />

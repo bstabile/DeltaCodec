@@ -19,8 +19,9 @@ namespace Stability.Data.Compression.TestUtility
 {
     public enum FactorMode
     {
-        Auto = 0,
-        None = 1,
-        Granular
+        None = 0,
+        Granular = 1,
+        Auto = 2,
+        All = 3, // CodecConfigs cloned: "FactoringComparison"
     }
 }

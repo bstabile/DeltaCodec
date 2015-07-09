@@ -58,7 +58,7 @@
     <Compile Include="ComparativeTests.cs" />
     <Compile Include="MiscellaneousTests.cs" />
     <Compile Include="StrupleTests.cs" />
-    <Compile Include="Utility\TestHelper.cs" />
+    <Compile Include="TupleTests.cs" />
     <Compile Include="Utility\TestRunnerFactory.cs" />
   </ItemGroup>
   <ItemGroup>

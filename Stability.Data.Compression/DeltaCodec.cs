@@ -9,18 +9,12 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
-using Stability.Data.Compression.DataStructure;
 using Stability.Data.Compression.Finishers;
 using Stability.Data.Compression.Transforms;
-using Stability.Data.Compression.Utility;
 
 namespace Stability.Data.Compression
 {
@@ -142,153 +136,7 @@ namespace Stability.Data.Compression
 
         #endregion // Public Properties
 
-        #region Generic Methods
-
-        byte[] IDeltaCodec.Encode<T>(StrupleEncodingArgs<T> args)
-        {
-            return Encode(args);
-        }
-
-        byte[] IDeltaCodec.Encode<T>(IList<T> list,
-            int numBlocks,
-            CompressionLevel level,
-            T? granularity,
-            Monotonicity monotonicity)
-        {
-            return Encode(list, numBlocks, level, granularity, monotonicity);
-        }
-
-        public virtual byte[] Encode<T>(StrupleEncodingArgs<T> args)
-            where T : struct
-        {
-            return Encode(args.List, args.NumBlocks, args.Level, args.Granularity, args.Monotonicity);
-        }
-
-        public virtual byte[] Encode<T>(IList<T> list,
-            int numBlocks = 1,
-            CompressionLevel level = CompressionLevel.Fastest,
-            T? granularity = default(T?),
-            Monotonicity monotonicity = Monotonicity.None)
-            where T : struct
-        {
-            const byte numVectors = 1;
-            const ushort shortFlags = 0; // reserved for future use
-
-            var arr = list.ToArray();
-
-            // Sanity Check!
-            if (numBlocks < 1)
-                numBlocks = 1;
-            if (numBlocks > MaxNumParallelBlocks)
-                numBlocks = MaxNumParallelBlocks;
-
-            var encodedBlocks = new List<byte[][]>(numVectors);
-            for (var i = 0; i < numVectors; i++)
-            {
-                encodedBlocks.Add(new byte[numBlocks][]);
-            }
-            var ranges = OrderedRangeFactory.Create(0, list.Count, numBlocks);
-
-            try
-            {
-                Parallel.For(0, ranges.Count, r =>
-                {
-                    encodedBlocks[0][r] = EncodeBlock(
-                        blockIndex: r,
-                        range: ranges[r],
-                        list: arr,
-                        level: level,
-                        granularity: granularity,
-                        monotonicity: monotonicity);
-                });
-            }
-            catch (Exception ex)
-            {
-                // This can happen when the client is passing in an invalid list type.
-                Debug.WriteLine(ex.Message);
-                throw;
-            }
-
-            return WriteEncodedBlocks(numBlocks, shortFlags, encodedBlocks);
-        }
-
-        IList<T> IDeltaCodec.Decode<T>(byte[] bytes)
-        {
-            return Decode<T>(bytes);
-        }
-
-        public virtual IList<T> Decode<T>(byte[] bytes)
-            where T : struct
-        {
-            const byte numVectorsExpected = 1;
-
-            ushort shortFlags;
-            var encodedBlocks = ReadEncodedBlocks(bytes, numVectorsExpected, out shortFlags);
-
-            // Now that we've deserialized the raw blocks, we need to use DeltaBlockSerializer to do the rest.
-
-            var decodedBlocks1 = new IList<T>[encodedBlocks[0].Count];
-
-            try
-            {
-                Parallel.For(0, encodedBlocks[0].Count, i =>
-                {
-                    decodedBlocks1[i] = DecodeBlock<T>(encodedBlocks[0][i], DefaultFinisher, blockIndex: i);
-                });
-            }
-            catch (Exception ex)
-            {
-                // This can happen when the client is passing in an invalid list type.
-                Debug.WriteLine(ex.Message);
-                throw;
-            }
-
-            // Combine Blocks
-
-            var listCount = decodedBlocks1.Select(b => b.Count).Sum();
-            var list = new T[listCount];
-
-            var k = 0;
-            for (var i = 0; i < decodedBlocks1.Length; i++)
-            {
-                for (var j = 0; j < decodedBlocks1[i].Count; j++)
-                {
-                    list[k++] = decodedBlocks1[i][j];
-                }
-            }
-            return list;
-        }
-
-        #endregion // Generic Methods
-
         #region Protected Methods
-
-        protected byte[] EncodeBlock<T>(int blockIndex, Range32 range, T[] list, CompressionLevel level, T? granularity,
-            Monotonicity monotonicity)
-            where T : struct
-        {
-            var start = range.InclusiveStart;
-            var stop = range.ExclusiveStop;
-            var block = new ArraySegment<T>(list, start, stop - start);
-            var state = new DeltaBlockState<T>(
-                list: block,
-                level: level,
-                granularity: granularity,
-                monotonicity: monotonicity,
-                finisher: DefaultFinisher,
-                blockIndex: blockIndex);
-            Transform.Encode(state);
-            return DeltaBlockSerializer.Serialize(state);
-        }
-
-        protected IList<T> DecodeBlock<T>(byte[] block, IFinisher finisher, int blockIndex = 0)
-            where T : struct
-        {
-            var state = new DeltaBlockState<T>(block, finisher, blockIndex);
-            DeltaBlockSerializer.Deserialize(state);
-            Transform.Decode(state);
-            return state.List;
-        }
 
         protected List<byte[]>[] ReadEncodedBlocks(byte[] bytes, int numVectorsExpected, out ushort flags)
         {

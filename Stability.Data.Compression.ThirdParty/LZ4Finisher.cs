@@ -17,11 +17,9 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // Derivative Work License (Stability.Data.Compression.ThirdParty)
-using System;
-using System.Collections.Generic;
+
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using Stability.Data.Compression.Finishers;
 using Stability.Data.Compression.ThirdParty.Internal.LZ4;
 
@@ -44,7 +42,7 @@ namespace Stability.Data.Compression.ThirdParty
         /// <remarks>
         /// This does NOT close or alter the "Position" property of the returned stream.
         /// </remarks>
-        public override MemoryStream EncodeToStream(MemoryStream input, CompressionLevel level = CompressionLevel.Optimal)
+        public override MemoryStream EncodeToStream(MemoryStream input, CompressionLevel level = CompressionLevel.Fastest)
         {
             var highC = level == CompressionLevel.Optimal;
             input.Position = 0;

@@ -17,6 +17,7 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // Derivative Work License (Stability.Data.Compression.ThirdParty)
+
 using System.IO;
 using System.IO.Compression;
 using Stability.Data.Compression.Finishers;
@@ -37,17 +38,44 @@ namespace Stability.Data.Compression.ThirdParty
 
         /// <summary>
         /// This encodes an input stream to an output stream.
+        /// Instead of CompressionLevel this method accepts a block size multple (between 1 and 9).
         /// </summary>
         /// <param name="input">A stream of data to encode.</param>
+        /// <param name="blockSizeMultiple">The block size multiple (1-9 times 100k)</param>
         /// <returns>A stream that has been encoded.</returns>
         /// <remarks>
         /// This does NOT close or alter the "Position" property of the returned stream.
         /// </remarks>
-        public override MemoryStream EncodeToStream(MemoryStream input, CompressionLevel level = CompressionLevel.Optimal)
+        public MemoryStream EncodeToStream(MemoryStream input, int blockSizeMultiple = 1)
         {
+            var lev = blockSizeMultiple;
+            // bounds checking
+            lev = lev < 1 ? 1 : lev > 9 ? 9 : lev;
+
             input.Position = 0;
             var output = new MemoryStream();
-            using (var compressor = new SharpZipLibBZip2OutputStream(output))
+            using (var compressor = new SharpZipLibBZip2OutputStream(output, lev))
+            {
+                input.CopyTo(compressor);
+            }
+            return output;
+        }
+
+        /// <summary>
+        /// This encodes an input stream to an output stream.
+        /// </summary>
+        /// <param name="input">A stream of data to encode.</param>
+        /// <param name="level">The time vs space parameter that chooses a 100k blocksize multiplier (Fastest = 1, Optimal = 9).</param>
+        /// <returns>A stream that has been encoded.</returns>
+        /// <remarks>
+        /// This does NOT close or alter the "Position" property of the returned stream.
+        /// </remarks>
+        public override MemoryStream EncodeToStream(MemoryStream input, CompressionLevel level = CompressionLevel.Fastest)
+        {
+            var lev = level == CompressionLevel.Optimal ? 9 : 1;
+            input.Position = 0;
+            var output = new MemoryStream();
+            using (var compressor = new SharpZipLibBZip2OutputStream(output, lev))
             {
                 input.CopyTo(compressor);
             }

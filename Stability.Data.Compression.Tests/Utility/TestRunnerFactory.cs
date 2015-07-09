@@ -415,9 +415,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(IonicBZip2Codec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner IonicBZip2Fast(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2Codec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner IonicBZip2OptimalBP(bool underline = false)
         {
             return CreateRunner(IonicBZip2Codec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner IonicBZip2FastBP(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2Codec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: true, underline: underline);
         }
 
         #endregion // IonicBZip2 (does not support factoring)
@@ -429,9 +439,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner IonicBZip2DeltaNoFactorFast(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner IonicBZip2DeltaNoFactorOptimalBP(bool underline = false)
         {
             return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner IonicBZip2DeltaNoFactorFastBP(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: true, underline: underline);
         }
 
         #endregion // IonicBZip2DeltaNoFactor
@@ -443,9 +463,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Auto, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner IonicBZip2DeltaAutoFactorFast(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Auto, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner IonicBZip2DeltaAutoFactorOptimalBP(bool underline = false)
         {
             return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Auto, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner IonicBZip2DeltaAutoFactorFastBP(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Auto, isParallel: true, underline: underline);
         }
 
         #endregion // IonicBZip2DeltaAutoFactor
@@ -457,9 +487,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Granular, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner IonicBZip2DeltaGranularFast(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Granular, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner IonicBZip2DeltaGranularOptimalBP(bool underline = false)
         {
             return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Granular, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner IonicBZip2DeltaGranularFastBP(bool underline = false)
+        {
+            return CreateRunner(IonicBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Granular, isParallel: true, underline: underline);
         }
 
         #endregion // IonicBZip2DeltaGranular
@@ -663,9 +703,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(SharpBZip2Codec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner SharpBZip2Fast(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2Codec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner SharpBZip2OptimalBP(bool underline = false)
         {
             return CreateRunner(SharpBZip2Codec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner SharpBZip2FastBP(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2Codec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: true, underline: underline);
         }
 
         #endregion // SharpBZip2 (does not support factoring)
@@ -677,9 +727,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner SharpBZip2DeltaNoFactorFast(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner SharpBZip2DeltaNoFactorOptimalBP(bool underline = false)
         {
             return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.None, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner SharpBZip2DeltaNoFactorFastBP(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.None, isParallel: true, underline: underline);
         }
 
         #endregion // SharpBZip2DeltaNoFactor
@@ -691,9 +751,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Auto, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner SharpBZip2DeltaAutoFactorFast(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Auto, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner SharpBZip2DeltaAutoFactorOptimalBP(bool underline = false)
         {
             return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Auto, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner SharpBZip2DeltaAutoFactorFastBP(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Auto, isParallel: true, underline: underline);
         }
 
         #endregion // SharpBZip2DeltaAutoFactor
@@ -705,9 +775,19 @@ namespace Stability.Data.Compression.Tests.Utility
             return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Granular, isParallel: false, underline: underline);
         }
 
+        public static CodecTestRunner SharpBZip2DeltaGranularFast(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Granular, isParallel: false, underline: underline);
+        }
+
         public static CodecTestRunner SharpBZip2DeltaGranularOptimalBP(bool underline = false)
         {
             return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Optimal, FactorMode.Granular, isParallel: true, underline: underline);
+        }
+
+        public static CodecTestRunner SharpBZip2DeltaGranularFastBP(bool underline = false)
+        {
+            return CreateRunner(SharpBZip2DeltaCodec.Instance, CompressionLevel.Fastest, FactorMode.Granular, isParallel: true, underline: underline);
         }
 
         #endregion // SharpBZip2DeltaGranular
@@ -903,9 +983,9 @@ namespace Stability.Data.Compression.Tests.Utility
 
                 // OptimalVersusFast
                 case TestGroupType.SerialOptimalVersusFast:
-                    return SerialDeltaOptimalVersusFast();
-                case TestGroupType.SerialDeltaOptimalVersusFast:
                     return SerialOptimalVersusFast();
+                case TestGroupType.SerialDeltaOptimalVersusFast:
+                    return SerialDeltaOptimalVersusFast();
                 case TestGroupType.ParallelOptimalVersusFast:
                     return ParallelOptimalVersusFast();
                 case TestGroupType.ParallelDeltaOptimalVersusFast:
@@ -1007,8 +1087,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateFast(underline: true),
                 QuickLZFast(),
                 LZ4Fast(underline: true),
-                IonicBZip2Optimal(),
-                SharpBZip2Optimal(underline: true),
+                IonicBZip2Fast(),
+                SharpBZip2Fast(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1026,8 +1106,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateDeltaNoFactorFast(underline: true),
                 QuickLZDeltaNoFactorFast(),
                 LZ4DeltaNoFactorFast(underline: true),
-                IonicBZip2DeltaNoFactorOptimal(),
-                SharpBZip2DeltaNoFactorOptimal(),
+                IonicBZip2DeltaNoFactorFast(),
+                SharpBZip2DeltaNoFactorFast(),
             };
             group.InitializeRunners();
             return group;
@@ -1045,8 +1125,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateDeltaAutoFactorFast(underline: true),
                 QuickLZDeltaAutoFactorFast(),
                 LZ4DeltaAutoFactorFast(underline: true),
-                IonicBZip2DeltaAutoFactorOptimal(),
-                SharpBZip2DeltaAutoFactorOptimal(),
+                IonicBZip2DeltaAutoFactorFast(),
+                SharpBZip2DeltaAutoFactorFast(),
             };
             group.InitializeRunners();
             return group;
@@ -1064,8 +1144,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateDeltaGranularFast(underline: true),
                 QuickLZDeltaGranularFast(),
                 LZ4DeltaGranularFast(underline: true),
-                IonicBZip2DeltaGranularOptimal(),
-                SharpBZip2DeltaGranularOptimal(),
+                IonicBZip2DeltaGranularFast(),
+                SharpBZip2DeltaGranularFast(),
             };
             group.InitializeRunners();
             return group;
@@ -1163,8 +1243,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateFastBP(underline: true),
                 QuickLZFastBP(),
                 LZ4FastBP(underline: true),
-                IonicBZip2OptimalBP(), // No fast version
-                SharpBZip2OptimalBP(underline: true), // No fast version
+                IonicBZip2FastBP(), // No fast version
+                SharpBZip2FastBP(underline: true), // No fast version
             };
             group.InitializeRunners();
             return group;
@@ -1182,8 +1262,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateDeltaNoFactorFastBP(underline: true),
                 QuickLZDeltaNoFactorFastBP(),
                 LZ4DeltaNoFactorFastBP(underline: true),
-                IonicBZip2DeltaNoFactorOptimalBP(),
-                SharpBZip2DeltaNoFactorOptimalBP(),
+                IonicBZip2DeltaNoFactorFastBP(),
+                SharpBZip2DeltaNoFactorFastBP(),
             };
             group.InitializeRunners();
             return group;
@@ -1201,8 +1281,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateDeltaAutoFactorFastBP(underline: true),
                 QuickLZDeltaAutoFactorFastBP(),
                 LZ4DeltaAutoFactorFastBP(underline: true),
-                IonicBZip2DeltaAutoFactorOptimalBP(),
-                SharpBZip2DeltaAutoFactorOptimalBP(),
+                IonicBZip2DeltaAutoFactorFastBP(),
+                SharpBZip2DeltaAutoFactorFastBP(),
             };
             group.InitializeRunners();
             return group;
@@ -1220,8 +1300,8 @@ namespace Stability.Data.Compression.Tests.Utility
                 SharpDeflateDeltaGranularFastBP(underline: true),
                 QuickLZDeltaGranularFastBP(),
                 LZ4DeltaGranularFastBP(underline: true),
-                IonicBZip2DeltaGranularOptimalBP(),
-                SharpBZip2DeltaGranularOptimalBP(),
+                IonicBZip2DeltaGranularFastBP(),
+                SharpBZip2DeltaGranularFastBP(),
             };
             group.InitializeRunners();
             return group;
@@ -1303,10 +1383,10 @@ namespace Stability.Data.Compression.Tests.Utility
                 QuickLZFastBP(underline: true),
                 LZ4Fast(),
                 LZ4FastBP(underline: true),
-                IonicBZip2Optimal(),
-                IonicBZip2OptimalBP(underline: true),
-                SharpBZip2Optimal(),
-                SharpBZip2OptimalBP(underline: true),
+                IonicBZip2Fast(),
+                IonicBZip2FastBP(underline: true),
+                SharpBZip2Fast(),
+                SharpBZip2FastBP(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1330,10 +1410,10 @@ namespace Stability.Data.Compression.Tests.Utility
                 QuickLZDeltaGranularFastBP(underline: true),
                 LZ4DeltaGranularFast(),
                 LZ4DeltaGranularFastBP(underline: true),
-                IonicBZip2DeltaGranularOptimal(),
-                IonicBZip2DeltaGranularOptimalBP(underline: true),
-                SharpBZip2DeltaGranularOptimal(),
-                SharpBZip2DeltaGranularOptimalBP(underline: true),
+                IonicBZip2DeltaGranularFast(),
+                IonicBZip2DeltaGranularFastBP(underline: true),
+                SharpBZip2DeltaGranularFast(),
+                SharpBZip2DeltaGranularFastBP(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1412,10 +1492,10 @@ namespace Stability.Data.Compression.Tests.Utility
                 QuickLZDeltaNoFactorFast(underline: true),
                 LZ4Fast(),
                 LZ4DeltaNoFactorFast(underline: true),
-                IonicBZip2Optimal(),
-                IonicBZip2DeltaNoFactorOptimal(underline: true),
-                SharpBZip2Optimal(),
-                SharpBZip2DeltaNoFactorOptimal(underline: true),
+                IonicBZip2Fast(),
+                IonicBZip2DeltaNoFactorFast(underline: true),
+                SharpBZip2Fast(),
+                SharpBZip2DeltaNoFactorFast(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1438,10 +1518,10 @@ namespace Stability.Data.Compression.Tests.Utility
                 QuickLZDeltaNoFactorFastBP(underline: true),
                 LZ4FastBP(),
                 LZ4DeltaNoFactorFastBP(underline: true),
-                IonicBZip2OptimalBP(),
-                IonicBZip2DeltaNoFactorOptimalBP(underline: true),
-                SharpBZip2OptimalBP(),
-                SharpBZip2DeltaNoFactorOptimalBP(underline: true),
+                IonicBZip2FastBP(),
+                IonicBZip2DeltaNoFactorFastBP(underline: true),
+                SharpBZip2FastBP(),
+                SharpBZip2DeltaNoFactorFastBP(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1548,12 +1628,12 @@ namespace Stability.Data.Compression.Tests.Utility
                 LZ4DeltaNoFactorFast(),
                 LZ4DeltaAutoFactorFast(),
                 LZ4DeltaGranularFast(underline: true),
-                IonicBZip2DeltaNoFactorOptimal(),
-                IonicBZip2DeltaAutoFactorOptimal(),
-                IonicBZip2DeltaGranularOptimal(underline: true),
-                SharpBZip2DeltaNoFactorOptimal(),
-                SharpBZip2DeltaAutoFactorOptimal(),
-                SharpBZip2DeltaGranularOptimal(underline: true),
+                IonicBZip2DeltaNoFactorFast(),
+                IonicBZip2DeltaAutoFactorFast(),
+                IonicBZip2DeltaGranularFast(underline: true),
+                SharpBZip2DeltaNoFactorFast(),
+                SharpBZip2DeltaAutoFactorFast(),
+                SharpBZip2DeltaGranularFast(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1583,13 +1663,13 @@ namespace Stability.Data.Compression.Tests.Utility
                 QuickLZDeltaGranularFastBP(underline: true),
                 LZ4DeltaNoFactorFastBP(),
                 LZ4DeltaAutoFactorFastBP(),
-                LZ4DeltaGranularFastBP(underline: true),
-                IonicBZip2DeltaNoFactorOptimalBP(),
-                IonicBZip2DeltaAutoFactorOptimalBP(),
-                IonicBZip2DeltaGranularOptimalBP(underline: true),
-                SharpBZip2DeltaNoFactorOptimalBP(),
-                SharpBZip2DeltaAutoFactorOptimalBP(),
-                SharpBZip2DeltaGranularOptimalBP(underline: true),
+                LZ4DeltaGranularFastBP(underline: true),    
+                IonicBZip2DeltaNoFactorFastBP(),
+                IonicBZip2DeltaAutoFactorFastBP(),
+                IonicBZip2DeltaGranularFastBP(underline: true),
+                SharpBZip2DeltaNoFactorFastBP(),
+                SharpBZip2DeltaAutoFactorFastBP(),
+                SharpBZip2DeltaGranularFastBP(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1618,7 +1698,9 @@ namespace Stability.Data.Compression.Tests.Utility
                 LZ4Optimal(),
                 LZ4Fast(underline: true),
                 IonicBZip2Optimal(),
-                SharpBZip2Optimal(underline: true),
+                IonicBZip2Fast(underline: true),
+                SharpBZip2Optimal(),
+                SharpBZip2Fast(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1643,7 +1725,9 @@ namespace Stability.Data.Compression.Tests.Utility
                 LZ4DeltaGranularOptimal(),
                 LZ4DeltaGranularFast(underline: true),
                 IonicBZip2DeltaGranularOptimal(),
-                SharpBZip2DeltaGranularOptimal(underline: true),
+                IonicBZip2DeltaGranularFast(underline: true),
+                SharpBZip2DeltaGranularOptimal(),
+                SharpBZip2DeltaGranularFast(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1668,7 +1752,9 @@ namespace Stability.Data.Compression.Tests.Utility
                 LZ4OptimalBP(),
                 LZ4FastBP(underline: true),
                 IonicBZip2OptimalBP(),
-                SharpBZip2OptimalBP(underline: true),
+                IonicBZip2FastBP(underline: true),
+                SharpBZip2OptimalBP(),
+                SharpBZip2FastBP(underline: true),
             };
             group.InitializeRunners();
             return group;
@@ -1693,7 +1779,9 @@ namespace Stability.Data.Compression.Tests.Utility
                 LZ4DeltaGranularOptimalBP(),
                 LZ4DeltaGranularFastBP(underline: true),
                 IonicBZip2DeltaGranularOptimalBP(),
-                SharpBZip2DeltaGranularOptimalBP(underline: true),
+                IonicBZip2DeltaGranularFastBP(underline: true),
+                SharpBZip2DeltaGranularOptimalBP(),
+                SharpBZip2DeltaGranularFastBP(underline: true),
             };
             group.InitializeRunners();
             return group;

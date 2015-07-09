@@ -11,8 +11,13 @@
 #endregion // License
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stability.Data.Compression.DataStructure;
+using Stability.Data.Compression.TestUtility;
 
 namespace Stability.Data.Compression.Tests
 {
@@ -20,27 +25,75 @@ namespace Stability.Data.Compression.Tests
     public class MiscellaneousTests
     {
         [TestMethod]
-        [Description("Demonstrates how casting ArraySegment to IList makes them genuinely useful.")]
-        public void ArraySegmentMagic()
+        public void StringAnalysis()
         {
-            var list = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            var arr = list.ToArray();
+            // We can't make the list too long because our max number of total characters is Int32.MaxValue.
+            // Eventually we might want to use LongLengths, but available memory will have to accommodate.
+            var listCount = 100000;
+            var list = TimeSeriesProvider.RandomAlphanumericString(listCount, seed: 0, minLength: 10, maxLength: 100);
 
-            var arrSegs = new ArraySegment<int>[3];
-            arrSegs[0] = new ArraySegment<int>(arr, 0, 3);
-            arrSegs[1] = new ArraySegment<int>(arr, 3, 3);
-            arrSegs[2] = new ArraySegment<int>(arr, 6, 3);
-            for (var i = 0; i < 3; i++)
+            //var q = list.GroupBy(c => c)
+            //    .Select(g => new { g.Key, Count = g.Count() })
+            //    .OrderByDescending(g => g.Count)
+            //    .Select(g => g.Key).ToList();
+
+            var stopwatch = Stopwatch.StartNew();
+
+            using (var ms = new MemoryStream(listCount*10))
             {
-                var seg = arrSegs[i] as IList<int>;
-                Console.Write(seg.GetType().Name.Substring(0, 12) + i);
-                Console.Write(" {");
-                for (var j = 0; j < seg.Count; j++)
+                var writer = new BinaryWriter(ms);
+                for (var i = 0; i < list.Count; i++)
                 {
-                    Console.Write("{0},", seg[j]);
+                    writer.Write(list[i]);
                 }
-                Console.WriteLine("}");
+                var bytes = ms.ToArray();
+                var codes = bytes.Distinct().ToArray();
+                var map = new Dictionary<byte, int>(codes.Length);
+                for (var i = 0; i < codes.Length; i++)
+                {
+                    map.Add(codes[i], 0);
+                }
+                for (var i = 0; i < bytes.Length; i++)
+                {
+                    map[bytes[i]]++;
+                }
+            }
+
+            var elapsed = stopwatch.Elapsed.TotalMilliseconds;
+
+            Console.WriteLine("Elapsed Freqency Count: {0}", elapsed.ToString("F2"));
+        }
+
+        [TestMethod]
+        [Description("For automated testing it is useful to set defaults.")]
+        public void ReflectGenericArgumentsToGetDefaultValue()
+        {
+            var struple = new Struple<int, double, string>();
+
+            var types = struple.GetType().GetGenericArguments();
+
+            for (var i = 0; i < types.Length; i++)
+            {
+                var t = types[i];
+                
+                Console.WriteLine("Type: {0, 12} :  {1}", t.Name, GetDefault(t));
             }
         }
+
+        #region Private Static Methods
+
+        private static object GetDefault(Type t)
+        {
+            Func<object> f = GetDefault<object>;
+            return f.Method.GetGenericMethodDefinition().MakeGenericMethod(t).Invoke(null, null);
+        }
+
+        private static T GetDefault<T>()
+        {
+            return default(T);
+        }
+
+        #endregion // Private Static Methods
+
     }
 }

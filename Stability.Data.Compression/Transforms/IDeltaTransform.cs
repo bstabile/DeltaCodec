@@ -9,6 +9,7 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
+
 using System;
 using Stability.Data.Compression.Utility;
 
@@ -16,8 +17,8 @@ namespace Stability.Data.Compression.Transforms
 {
     public interface IDeltaTransform
     {
-        void Encode<T>(DeltaBlockState<T> state) where T : struct;
-        void Decode<T>(DeltaBlockState<T> state) where T : struct;
+        void Encode<T>(BlockState<T> state);
+        void Decode<T>(BlockState<T> state);
 
         void Encode(DeltaBlockState<DateTimeOffset> state);
         void Decode(DeltaBlockState<DateTimeOffset> state);
@@ -53,6 +54,9 @@ namespace Stability.Data.Compression.Transforms
 
         void Encode(DeltaBlockState<decimal> state);
         void Decode(DeltaBlockState<decimal> state);
+
+        void Encode(DeltaBlockState<char> state);
+        void Decode(DeltaBlockState<char> state);
 
     }
 }

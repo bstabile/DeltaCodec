@@ -17,6 +17,7 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // Derivative Work License (Stability.Data.Compression.ThirdParty)
+
 using System.IO;
 using System.IO.Compression;
 using Stability.Data.Compression.Finishers;

@@ -774,6 +774,132 @@ namespace Stability.Data.Compression.TestUtility
 
         #endregion // Boolean (CoinToss)
 
+        #region Char
+
+        /// <summary>
+        /// The character list created here will be random within the combined
+        /// range of digits and letters (upper and lower case). This is not going
+        /// to be as easy to compress as real-world character series that are
+        /// typically going to be drawn from quite limited sets, and that are
+        /// probably going to have runs that can be additionally compressed with
+        /// RLE. Consider, for example, database fields that may only represent
+        /// a relatively small number of option codes.
+        /// </summary>
+        public static IList<char> RandomCharAlphaNumeric(int n, int seed = 0)
+        {
+            var rng = new Random(seed);
+
+            // Digits, Uppercase, Lowercase
+            var chars = new char[10 + 26 + 26];
+
+            for (var i = 0; i < 10; i++)
+            {
+                chars[i] = (char) (i + 0x30);
+            }
+            for (var i = 0; i < 26; i++)
+            {
+                chars[i + 10] = (char) (i + 0x41);
+                chars[i + 36] = (char) (i + 0x61);
+            }
+            
+            var list = new List<char>(n);
+            for (var i = 0; i < n; i++)
+            {
+                list.Add(chars[rng.Next(0, 62)]);
+            }
+            return list;
+        }
+
+        #endregion // Char
+
+        #region String
+
+        /// <summary>
+        /// This method returns random alphanumeric strings which range in
+        /// length from minLength to maxLength.
+        /// </summary>
+        public static IList<string> RandomAlphanumericString(int n, int seed = 0, int minLength = 10, int maxLength = 100)
+        {
+            var rng = new Random(seed);
+
+            // Dictionary: Digits, Uppercase letters, Lowercase Letters
+            var chars = new char[10 + 26 + 26];
+
+            for (var i = 0; i < 10; i++)
+            {
+                chars[i] = (char)(i + 0x30);
+            }
+            for (var i = 0; i < 26; i++)
+            {
+                chars[i + 10] = (char)(i + 0x41);
+                chars[i + 36] = (char)(i + 0x61);
+            }
+
+            // Start with a string that will show in the display of test samples
+            var list = new List<string>(n) { "RandomStrings" };
+            for (var i = 1; i < n; i++)
+            {
+                var len = rng.Next(minLength, maxLength + 1);
+                var s = new char[len];
+                for (var j = 0; j < len; j++)
+                {
+                    var idx = rng.Next(0, 62);
+                    s[j] = chars[idx];
+                }
+                list.Add(new string(s));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// This method returns quasi-cusips (fake security identifiers) that are 
+        /// either 8 or 9 characters in length. The ninth character in a cusip  
+        /// is a checksum, which are sometimes ignored in real applications. 
+        /// To make our list of strings slightly more interesting, we mix cusips 
+        /// that sometimes include the checksum, and other times not. Although this 
+        /// is meant to simulate cusips, it doesn't obey any of the semantics of 
+        /// real-world identifiers.
+        /// </summary>
+        /// This is a relatively trivial list of strings, but the random
+        /// construction makes the data relatively hard to compress anyway.
+        /// What we mainly are interested in testing is string termination
+        /// handling in encoding methods. To do that, the encodings will 
+        /// usually embed private-use unicode values such as 0x92.
+        /// <remarks>
+        /// </remarks>
+        public static IList<string> RandomStringQuasiCusip(int n, int seed = 0)
+        {
+            var rng = new Random(seed);
+
+            // Dictionary: digits, Uppercase letters
+            var chars = new char[10 + 26];
+
+            for (var i = 0; i < 10; i++)
+            {
+                chars[i] = (char)(i + 0x30);
+            }
+            for (var i = 0; i < 26; i++)
+            {
+                chars[i + 10] = (char)(i + 0x41);
+            }
+            // Start with a string that will show in the display of test samples
+            var list = new List<string>(n) { "CUSIP0000" };
+            for (var i = 1; i < n; i++)
+            {
+                var len = 8 + rng.Next(0, 2);
+                var s = new char[len];
+                for (var j = 0; j < len; j++)
+                {
+                    var idx = rng.Next(0, 36);
+                    s[j] = chars[idx];
+                }
+                list.Add(new string(s));
+            }
+            return list;
+        }
+
+        #endregion // String
+
         #region Real
 
         public static IList<float> FloatRandomWalk(int n, float startValue, float granularity = 1f, 

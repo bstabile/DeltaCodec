@@ -33,10 +33,10 @@ namespace Stability.Data.Compression.Utility
             Level = level;
             Monotonicity = monotonicity;
             IsAliased = isAliased;
-            AliasDataTypeCode = DeltaType.TypeToCode(aliasDataType);
+            AliasDataTypeCode = (byte) DeltaType.TypeToCode(aliasDataType);
         }
 
-        public byte DataTypeCode { get; set; }
+        public ushort DataTypeCode { get; set; }
 
         /// <summary>
         /// By default this is zero, which is the code for "object",
@@ -72,7 +72,7 @@ namespace Stability.Data.Compression.Utility
             }
             set
             {
-                DataTypeCode = (byte)(value & 0xF);
+                DataTypeCode = (ushort)(value & DeltaType.CodeMask);
 
                 var lev = (value >> 4) & 3;
 

@@ -111,9 +111,16 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DataStructure\EncodingArgs.cs" />
+    <Compile Include="DataStructure\MapEncodingArgs.cs" />
+    <Compile Include="DataStructure\MultiFieldEncodingArgs.cs" />
+    <Compile Include="DataStructure\TupleEncodingArgs.cs" />
+    <Compile Include="DeltaCodec_Dictionary.cs" />
+    <Compile Include="DeltaCodec_Structs.cs" />
     <Compile Include="DeltaCodec.cs" />
     <Compile Include="DeflateDeltaCodec.cs" />
     <Compile Include="DeltaCodec_Tuples.cs" />
+    <Compile Include="DeltaCodec_Struples.cs" />
     <Compile Include="DataStructure\Struple.cs" />
     <Compile Include="DataStructure\StrupleEncodingArgs.cs" />
     <Compile Include="IDeltaCodec.cs" />
@@ -121,6 +128,7 @@
     <Compile Include="Utility\BitReader.cs" />
     <Compile Include="Utility\BitsDTO.cs" />
     <Compile Include="Utility\BitWriter.cs" />
+    <Compile Include="Utility\BlockState.cs" />
     <Compile Include="Utility\OrderedRangeFactory.cs" />
     <Compile Include="Transforms\NullTransform.cs" />
     <Compile Include="Transforms\IDeltaTransform.cs" />

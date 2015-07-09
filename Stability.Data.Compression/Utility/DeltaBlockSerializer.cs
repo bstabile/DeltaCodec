@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.Serialization;
 
 namespace Stability.Data.Compression.Utility
@@ -41,6 +42,10 @@ namespace Stability.Data.Compression.Utility
             {typeof (float), o => Serialize((DeltaBlockState<float>) o)},
             {typeof (double), o => Serialize((DeltaBlockState<double>) o)},
             {typeof (decimal), o => Serialize((DeltaBlockState<decimal>) o)},
+            // Char
+            {typeof (char), o => Serialize((DeltaBlockState<char>) o)},
+            // String
+            {typeof (string), o => Serialize((BlockState<string>) o)},
         };
 
         private static readonly IDictionary<Type, Action<object>> DeserializeFuncMap = new Dictionary
@@ -63,6 +68,10 @@ namespace Stability.Data.Compression.Utility
             {typeof (float), o => Deserialize((DeltaBlockState<float>) o)},
             {typeof (double), o => Deserialize((DeltaBlockState<double>) o)},
             {typeof (decimal), o => Deserialize((DeltaBlockState<decimal>) o)},
+            // Char
+            {typeof (char), o => Deserialize((DeltaBlockState<char>) o)},
+            // String
+            {typeof (string), o => Deserialize((BlockState<string>) o)},
         };
 
         #endregion // Private Static Function Map
@@ -73,7 +82,6 @@ namespace Stability.Data.Compression.Utility
         /// This is actually a "Fake" generic version of the Transpose method.
         /// </summary>
         public static byte[] Serialize<T>(DeltaBlockState<T> state)
-            where T : struct
         {
             try
             {
@@ -90,7 +98,6 @@ namespace Stability.Data.Compression.Utility
         /// This is actually a "Fake" generic version of the Transpose method.
         /// </summary>
         public static void Deserialize<T>(DeltaBlockState<T> state)
-            where T : struct
         {
             try
             {
@@ -109,7 +116,6 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<DateTimeOffset> state)
         {
-            var factor = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
@@ -119,7 +125,7 @@ namespace Stability.Data.Compression.Utility
                 writer.Write(state.Anchor.Ticks);
                 writer.Write((short)(state.Anchor.Offset.Ticks / TimeSpan.TicksPerMinute));
 
-                writer.Write(factor);
+                writer.Write(state.Factor.Ticks);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -128,14 +134,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<DateTime> state)
         {
-            var factor = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor.Ticks);
-                writer.Write(factor);
+                writer.Write(state.Factor.Ticks);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -144,14 +149,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<TimeSpan> state)
         {
-            var factor = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor.Ticks);
-                writer.Write(factor);
+                writer.Write(state.Factor.Ticks);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -160,14 +164,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<long> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -176,14 +179,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<ulong> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -192,14 +194,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<int> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -208,14 +209,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<uint> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -224,14 +224,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<short> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -240,14 +239,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<ushort> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -256,14 +254,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<sbyte> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -272,14 +269,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<byte> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -303,14 +299,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<float> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -319,14 +314,13 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<double> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -335,14 +329,45 @@ namespace Stability.Data.Compression.Utility
 
         public static byte[] Serialize(DeltaBlockState<decimal> state)
         {
-            var factor = state.Factor ?? 1;
             using (var ms = new MemoryStream())
             using (var writer = new BinaryWriter(ms))
             {
                 writer.Write(state.Flags.Value);
                 writer.Write(state.ListCount);
                 writer.Write(state.Anchor);
-                writer.Write(factor);
+                writer.Write(state.Factor);
+                writer.Write(state.ByteCount);
+                writer.Write(state.Bytes);
+                return ms.ToArray();
+            }
+        }
+
+        public static byte[] Serialize(DeltaBlockState<char> state)
+        {
+            using (var ms = new MemoryStream())
+            using (var writer = new BinaryWriter(ms))
+            {
+                writer.Write(state.Flags.Value);
+                writer.Write(state.ListCount);
+                writer.Write(state.Anchor);
+                writer.Write(state.Factor);
+                writer.Write(state.ByteCount);
+                writer.Write(state.Bytes);
+                return ms.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// This is the generic serialization method for non-numeric data.
+        /// No anchor or factor values are written to the stream.
+        /// </summary>
+        public static byte[] Serialize<T>(BlockState<T> state)
+        {
+            using (var ms = new MemoryStream())
+            using (var writer = new BinaryWriter(ms))
+            {
+                writer.Write(state.Flags.Value);
+                writer.Write(state.ListCount);
                 writer.Write(state.ByteCount);
                 writer.Write(state.Bytes);
                 return ms.ToArray();
@@ -564,6 +589,36 @@ namespace Stability.Data.Compression.Utility
                 state.ListCount = reader.ReadInt32();
                 state.Anchor = reader.ReadDecimal();
                 state.Factor = reader.ReadDecimal();
+                state.ByteCount = reader.ReadInt32();
+                state.Bytes = reader.ReadBytes(state.ByteCount);
+            }
+        }
+
+        public static void Deserialize(DeltaBlockState<char> state)
+        {
+            using (var ms = new MemoryStream(state.Bytes))
+            using (var reader = new BinaryReader(ms))
+            {
+                state.Flags.Value = reader.ReadUInt16();
+                state.ListCount = reader.ReadInt32();
+                state.Anchor = reader.ReadChar();
+                state.Factor = reader.ReadChar();
+                state.ByteCount = reader.ReadInt32();
+                state.Bytes = reader.ReadBytes(state.ByteCount);
+            }
+        }
+
+        /// <summary>
+        /// This is the generic deserialization method for non-numeric data.
+        /// No anchor or factor values are read from the stream.
+        /// </summary>
+        public static void Deserialize<T>(BlockState<T> state)
+        {
+            using (var ms = new MemoryStream(state.Bytes))
+            using (var reader = new BinaryReader(ms))
+            {
+                state.Flags.Value = reader.ReadUInt16();
+                state.ListCount = reader.ReadInt32();
                 state.ByteCount = reader.ReadInt32();
                 state.Bytes = reader.ReadBytes(state.ByteCount);
             }

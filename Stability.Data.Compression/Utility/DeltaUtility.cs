@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Stability.Data.Compression.DataStructure;
 
 namespace Stability.Data.Compression.Utility
 {
@@ -42,6 +43,8 @@ namespace Stability.Data.Compression.Utility
             {typeof (float), o => Factor((IList<float>) o)},
             {typeof (double), o => Factor((IList<double>) o)},
             {typeof (decimal), o => Factor((IList<decimal>) o)},
+            // Char
+            {typeof (char), o => Factor((IList<char>) o)},
         };
 
         public static T Factor<T>(IList<T> list)
@@ -594,6 +597,42 @@ namespace Stability.Data.Compression.Utility
             return factor;
         }
 
+        public static char Factor(IList<char> arr)
+        {
+            var n = arr.Count - 1;
+            var factor = (short) arr[0];
+            var lastTicks = (short)0;
+            // We need to try and start with a non-zero factor.
+            // TODO: Consider the case where all values are equal (e.g. all zeros)
+            var f = 1;
+            while (factor == 0 && f < arr.Count)
+            {
+                factor = (short) arr[f];
+                f++;
+            }
+            for (var i = f; i < n; i++)
+            {
+                var a = (short) arr[i + 1];
+                var b = factor;
+
+                // Short-circuiting here can shave 2% off time on a full factor run
+                if (a == lastTicks || a % factor == 0)
+                    continue; // Already been here!
+                lastTicks = a;
+
+                while (b != 0)
+                {
+                    var c = (short)(a % b);
+                    a = b;
+                    b = c;
+                }
+                factor = a;
+                if (factor == 1)
+                    break;
+            }
+            return (char) factor;
+        }
+
         #endregion // Factor
 
         #region Precision
@@ -778,10 +817,12 @@ namespace Stability.Data.Compression.Utility
             {typeof(sbyte), list => ConvertToBuffer((IList<sbyte>) list)},
             {typeof(byte), list => ConvertToBuffer((IList<byte>) list)},
             {typeof(bool), list => ConvertToBuffer((IList<bool>) list)},
+            {typeof(char), list => ConvertToBuffer((IList<char>) list)},
+            {typeof(string), list => ConvertToBuffer((IList<string>) list)},
        };
 
         public static byte[] ConvertToBuffer<T>(IList<T> list)
-            where T : struct, IComparable<T>, IEquatable<T>
+            where T : IComparable<T>, IEquatable<T>
         {
             return ConvertToBufferFuncMap[typeof(T)].Invoke(list);
         }
@@ -946,6 +987,28 @@ namespace Stability.Data.Compression.Utility
             return ms.ToArray();
         }
 
+        public static byte[] ConvertToBuffer(IList<char> list)
+        {
+            var ms = new MemoryStream();
+            var writer = new BinaryWriter(ms);
+            foreach (var v in list)
+            {
+                writer.Write(v);
+            }
+            return ms.ToArray();
+        }
+
+        public static byte[] ConvertToBuffer(IList<string> list)
+        {
+            var ms = new MemoryStream();
+            var writer = new BinaryWriter(ms);
+            foreach (var v in list)
+            {
+                writer.Write(v);
+            }
+            return ms.ToArray();
+        }
+
         #endregion // ConvertToBuffer
 
         public static int BitCount(Type type)
@@ -969,22 +1032,84 @@ namespace Stability.Data.Compression.Utility
                     return 32;
                 case "Int16":
                 case "UInt16":
+                case "Char":
                     return 16;
                 case "Byte":
                 case "SByte":
                 case "Boolean":
                     return 8;
                 default:
-                    throw new StrongTypingException("Must be a numeric value type (or Boolean, DateTime, TimeSpan");
+                    throw new StrongTypingException("Must be a numeric value type (or Boolean, Char, DateTimeOffset, DateTime, TimeSpan");
             }
         }
 
-        public static int GetSizeOfIntrinsicType(Type t)
+        public static int GetSizeOfType(Type t, object list = null)
         {
-            return t == typeof (Boolean) ? 1
-                : t == typeof (DateTimeOffset) ? 10
-                    : t == typeof (DateTime) || t == typeof (TimeSpan) ? 8
-                        : Marshal.SizeOf(t);
+            if (t == typeof (string))
+            {
+                var strings = list as IList<string>;
+                if (strings != null)
+                {
+                    var charCount = strings.Sum(s => s.Length);
+                    return (charCount * 2) / strings.Count;
+                }
+                return 0;
+            }
+            if (t == typeof (Boolean))
+            {
+                return 1;
+            }
+            if (t == typeof (char))
+            {
+                return 2;
+            }
+            if (t == typeof (DateTimeOffset))
+            {
+                return 10;
+            }
+            if (t == typeof (DateTime) || t == typeof (TimeSpan))
+            {
+                return 8;
+            }
+            return Marshal.SizeOf(t);
+        }
+
+        public static int GetTotalBytes(MultiFieldEncodingArgs args)
+        {
+            if (args == null) throw new ArgumentNullException("args");
+
+            var argsType = args.GetType();
+            var types = argsType.GetGenericArguments();
+
+            var simpleBytes = types.Where(t => t != typeof(string))
+                .Sum(t => GetSizeOfType(t, args.DynamicData)) * args.DataCount;
+            var stringBytes = GetTotalBytesForStringFields(args);
+            var total = simpleBytes + stringBytes;
+            return total;
+        }
+
+        public static int GetTotalBytesForStringFields(MultiFieldEncodingArgs args)
+        {
+            var argsType = args.GetType();
+            var listType = argsType.GetProperty("Data").PropertyType.GetGenericArguments().First();
+            var props = listType.GetFields().Where(p => p.FieldType == typeof(string)).ToList();
+
+            var sumChars = 0;
+            var stringBytes = 0;
+            if (props.Count != 0)
+            {
+                var dynList = args.DynamicData;
+                for (var i = 0; i < props.Count; i++)
+                {
+                    var p = props[i];
+                    for (var j = 0; j < dynList.Count; j++)
+                    {
+                        sumChars += p.GetValue(dynList[j]).Length;
+                    }
+                }
+                stringBytes = 2 * sumChars;
+            }
+            return stringBytes;
         }
     }
 }

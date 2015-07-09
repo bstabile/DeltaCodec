@@ -13,7 +13,9 @@
 using System;
 using System.Data.SqlTypes;
 using System.IO;
+using System.IO.Compression;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stability.Data.Compression.DataStructure;
 using Stability.Data.Compression.Finishers;
 using Stability.Data.Compression.Tests.Utility;
 using Stability.Data.Compression.TestUtility;
@@ -45,7 +47,7 @@ namespace Stability.Data.Compression.Tests
         //       This will depend on the length of the lists, of course. So if you want to use a
         //       high number of runs, then consider using shorter lists.
 
-        private const int DefaultRunCount = 2;
+        private const int DefaultRunCount = 3;
         private const int DefaultDataCount = 1000000;
 
         // Codecs in the core and "ThirdParty" assemblies have two versions,
@@ -68,24 +70,24 @@ namespace Stability.Data.Compression.Tests
             //TestGroupType.ParallelDeltaNoFactorOptimal;
             //TestGroupType.ParallelDeltaAutoFactorFast;
             //TestGroupType.ParallelDeltaAutoFactorOptimal;
-            //TestGroupType.ParallelDeltaGranularFast;
-            TestGroupType.ParallelDeltaGranularOptimal;
-        //TestGroupType.SerialVersusParallelFast;
-        //TestGroupType.SerialVersusParallelOptimal;
-        //TestGroupType.SerialVersusParallelDeltaFast;
-        //TestGroupType.SerialVersusParallelDeltaOptimal;
-        //TestGroupType.SerialNullTransformVersusDeltaFast;
-        //TestGroupType.SerialNullTransformVersusDeltaOptimal;
-        //TestGroupType.ParallelNullTransformVersusDeltaFast;
-        //TestGroupType.ParallelNullTransformVersusDeltaOptimal;
-        //TestGroupType.SerialOptimalVersusFast;
-        //TestGroupType.SerialDeltaOptimalVersusFast;
-        //TestGroupType.ParallelOptimalVersusFast;
-        //TestGroupType.ParallelDeltaOptimalVersusFast;
-        //TestGroupType.SerialFactoringComparisonFast;
-        //TestGroupType.SerialFactoringComparisonOptimal;
-        //TestGroupType.ParallelFactoringComparisonFast;
-        //TestGroupType.ParallelFactoringComparisonOptimal;
+            TestGroupType.ParallelDeltaGranularFast;
+            //TestGroupType.ParallelDeltaGranularOptimal;
+            //TestGroupType.SerialVersusParallelFast;
+            //TestGroupType.SerialVersusParallelOptimal;
+            //TestGroupType.SerialVersusParallelDeltaFast;
+            //TestGroupType.SerialVersusParallelDeltaOptimal;
+            //TestGroupType.SerialNullTransformVersusDeltaFast;
+            //TestGroupType.SerialNullTransformVersusDeltaOptimal;
+            //TestGroupType.ParallelNullTransformVersusDeltaFast;
+            //TestGroupType.ParallelNullTransformVersusDeltaOptimal;
+            //TestGroupType.SerialOptimalVersusFast;
+            //TestGroupType.SerialDeltaOptimalVersusFast;
+            //TestGroupType.ParallelOptimalVersusFast;
+            //TestGroupType.ParallelDeltaOptimalVersusFast;
+            //TestGroupType.SerialFactoringComparisonFast;
+            //TestGroupType.SerialFactoringComparisonOptimal;
+            //TestGroupType.ParallelFactoringComparisonFast;
+            //TestGroupType.ParallelFactoringComparisonOptimal;
 
         private static readonly CodecTestGroup TestGroup = TestRunnerFactory.GetGroup(GroupType);
 
@@ -95,6 +97,53 @@ namespace Stability.Data.Compression.Tests
         // with ad hoc chnages to parameter values and input data.
 
         #endregion // Configuration
+
+        [TestMethod]
+        public void Example()
+        {
+            const Monotonicity monotonicity = Monotonicity.None;
+            const int granularity = 25;
+            var list = TimeSeriesProvider.Int64RandomWalk(
+                n: 1000, startValue: 230000, granularity: granularity, min: -4, max: 4, seed: 0);
+
+            var codec = DeflateCodec.Instance;
+
+            // There are several different ways to initialize the arguments...
+
+            // Use defaults (except for the list itself)
+            var args0 = new NumericEncodingArgs<long>(list);
+
+            // Constructor with some combination of arguments
+            var args1 = new NumericEncodingArgs<long>(
+                list: list,
+                numBlocks: 1,
+                level: CompressionLevel.Optimal,
+                granularity: granularity,
+                monotonicity: monotonicity,
+                custom: null
+                );
+
+            // Property initializer
+            var args2 = new NumericEncodingArgs<long>(list)
+            {
+                NumBlocks = 1,
+                Level = CompressionLevel.Optimal,
+                Granularity = granularity,
+                Monotonicity = monotonicity,
+                Custom = null,
+            };
+
+            // Inline
+            var bytes = codec.Encode(new NumericEncodingArgs<long>(list));
+
+            var listOut = codec.Decode<long>(bytes);
+
+            Assert.AreEqual(list.Count, listOut.Count);
+            for (var i = 0; i < list.Count; i++)
+            {
+                Assert.AreEqual(list[i], listOut[i]);
+            }
+        }
 
         #region DateTimeOffset
 
@@ -721,18 +770,6 @@ namespace Stability.Data.Compression.Tests
 
         #endregion // Real
 
-        [TestMethod]
-        public void Example()
-        {
-            const Monotonicity monotonicity = Monotonicity.None;
-            const int granularity = 25;
-            var list = TimeSeriesProvider.Int64RandomWalk(
-                n: DefaultDataCount, startValue: 230000, granularity: granularity, min: -4, max: 4, seed: 0);
-
-            var codec = DeflateCodec.Instance;
-            var bytes = codec.Encode(list);
-            var listOut = codec.Decode<DateTime>(bytes);
-        }
     }
 
 }

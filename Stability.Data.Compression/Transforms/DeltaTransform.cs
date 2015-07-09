@@ -9,12 +9,14 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Stability.Data.Compression.Finishers;
 using Stability.Data.Compression.Utility;
@@ -60,7 +62,11 @@ namespace Stability.Data.Compression.Transforms
                 {typeof (float), o => Encode((DeltaBlockState<float>) o)},
                 {typeof (double), o => Encode((DeltaBlockState<double>) o)},
                 {typeof (decimal), o => Encode((DeltaBlockState<decimal>) o)},
-            };
+                // Char
+                {typeof (char), o => Encode((DeltaBlockState<char>) o)},
+                // String
+                {typeof (string), o => Encode((BlockState<string>) o)},
+           };
             _decodeFuncMap = new Dictionary
                 <Type, Action<object>>
             {
@@ -81,6 +87,10 @@ namespace Stability.Data.Compression.Transforms
                 {typeof (float), o => Decode((DeltaBlockState<float>) o)},
                 {typeof (double), o => Decode((DeltaBlockState<double>) o)},
                 {typeof (decimal), o => Decode((DeltaBlockState<decimal>) o)},
+                // Char
+                {typeof (char), o => Decode((DeltaBlockState<char>) o)},
+                // String
+                {typeof(string), o => Decode((BlockState<string>) o)},
             };
         }
 
@@ -91,8 +101,7 @@ namespace Stability.Data.Compression.Transforms
         /// <summary>
         /// This is actually a "Fake" generic version of the Transpose method.
         /// </summary>
-        public virtual void Encode<T>(DeltaBlockState<T> state)
-            where T : struct
+        public virtual void Encode<T>(BlockState<T> state)
         {
             try
             {
@@ -108,8 +117,7 @@ namespace Stability.Data.Compression.Transforms
         /// <summary>
         /// This is actually a "Fake" generic version of the Transpose method.
         /// </summary>
-        public virtual void Decode<T>(DeltaBlockState<T> state)
-            where T : struct
+        public virtual void Decode<T>(BlockState<T> state)
         {
             try
             {
@@ -131,7 +139,7 @@ namespace Stability.Data.Compression.Transforms
             var list = state.List;
             state.ListCount = list.Count;
             state.Anchor = list[0];
-            state.Factor = state.Factor.HasValue ? state.Factor.Value.DateTime : new DateTime(1);
+            state.Factor = state.Factor.DateTime;
 
             var dateTimes = new DateTime[list.Count];
             var offsets = new short[list.Count];
@@ -152,7 +160,7 @@ namespace Stability.Data.Compression.Transforms
                 var writer = new BinaryWriter(ms);
 
                 var stateD = new DeltaBlockState<DateTime>(dateTimes, CompressionLevel.NoCompression, 
-                    state.Factor.Value.DateTime, Monotonicity.None, state.Finisher, state.BlockIndex);
+                    state.Factor.DateTime, Monotonicity.None, state.Finisher, state.BlockIndex);
                 Encode(stateD);
 
                 writer.Write(stateD.Bytes.Length);
@@ -175,7 +183,6 @@ namespace Stability.Data.Compression.Transforms
 
         public virtual void Decode(DeltaBlockState<DateTimeOffset> state)
         {
-            state.Factor = state.Factor ?? new DateTime(1);
             var baseOffset = (short)(state.Anchor.Offset.Ticks/TimeSpan.TicksPerMinute);
 
             var bytes = (byte[]) state.Finisher.DecodeByte(state.Bytes);
@@ -188,7 +195,7 @@ namespace Stability.Data.Compression.Transforms
                 {
                     ListCount = state.ListCount,
                     Anchor = state.Anchor.DateTime,
-                    Factor = state.Factor.Value.DateTime,
+                    Factor = state.Factor.DateTime,
                     Finisher = state.Finisher,
                     BlockIndex = state.BlockIndex,
                     Flags = { Level = CompressionLevel.NoCompression, Monotonicity = Monotonicity.None }
@@ -235,9 +242,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var rwcBits = new BitsDT(0);
-
-            rwcBits.Long = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
+            var rwcBits = new BitsDT(state.Factor);
             if (rwcBits.Long == 0)
             {
                 rwcBits.Value = DeltaUtility.Factor(list);
@@ -264,8 +269,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeInt64(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
-            state.Factor = new DateTime(factor);
+            var factor = state.Factor.Ticks;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new DateTime[listCount];
@@ -291,8 +295,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var rwcBits = new BitsTS(0);
-            rwcBits.Long = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
+            var rwcBits = new BitsTS(state.Factor);
             if (rwcBits.Long == 0)
             {
                 rwcBits.Value = DeltaUtility.Factor(list);
@@ -319,8 +322,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeInt64(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor.HasValue ? state.Factor.Value.Ticks : 1;
-            state.Factor = new TimeSpan(factor);
+            var factor = state.Factor.Ticks;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new TimeSpan[listCount];
@@ -346,7 +348,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -372,7 +374,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeInt64(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             state.Factor = factor;
             var hasFactor = factor != 0 && factor != 1;
 
@@ -399,7 +401,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -425,7 +427,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeUInt64(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             state.Factor = factor;
             var hasFactor = factor != 0 && factor != 1;
 
@@ -452,7 +454,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -478,8 +480,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeInt32(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1;
-            state.Factor = factor;
+            var factor = state.Factor;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new int[listCount];
@@ -505,7 +506,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -531,8 +532,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeUInt32(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1;
-            state.Factor = factor;
+            var factor = state.Factor;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new uint[listCount];
@@ -558,7 +558,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -584,8 +584,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeInt16(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1;
-            state.Factor = factor;
+            var factor = state.Factor;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new short[listCount];
@@ -611,7 +610,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -637,8 +636,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeUInt16(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1; // Greatest Common Divisor
-            state.Factor = factor;
+            var factor = state.Factor; // Greatest Common Divisor
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new ushort[listCount];
@@ -664,7 +662,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -690,8 +688,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeSByte(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1; // Greatest Common Divisor
-            state.Factor = factor;
+            var factor = state.Factor; // Greatest Common Divisor
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new sbyte[listCount];
@@ -717,7 +714,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -743,8 +740,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeByte(state.Bytes);
             var listCount = state.ListCount; // Number of values
 
-            var factor = state.Factor ?? 1; // Greatest Common Divisor
-            state.Factor = factor;
+            var factor = state.Factor; // Greatest Common Divisor
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new byte[listCount];
@@ -916,7 +912,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0)
             {
                 factor = DeltaUtility.Factor(list);
@@ -942,8 +938,7 @@ namespace Stability.Data.Compression.Transforms
             var diffs = state.Finisher.DecodeDecimal(state.Bytes);
             var listCount = state.ListCount; // Number of value
 
-            var factor = state.Factor ?? 1;
-            state.Factor = factor;
+            var factor = state.Factor;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new decimal[listCount];
@@ -965,7 +960,7 @@ namespace Stability.Data.Compression.Transforms
             state.ListCount = list.Count;
             state.Anchor = list[0];
 
-            var factor = state.Factor ?? 1;
+            var factor = state.Factor;
             if (factor == 0 && state.Flags.Level == CompressionLevel.Optimal)
             {
                 // This is time consuming, so we only do it if the best compression is desired!
@@ -994,8 +989,7 @@ namespace Stability.Data.Compression.Transforms
         public virtual void Decode2(DeltaBlockState<decimal> state)
         {
             var listCount = state.ListCount;
-            var factor = state.Factor ?? 1;
-            state.Factor = factor;
+            var factor = state.Factor;
             var hasFactor = factor != 0 && factor != 1;
 
             var arr = new decimal[listCount];
@@ -1018,5 +1012,100 @@ namespace Stability.Data.Compression.Transforms
         }
 
         #endregion // Decimal
+
+        #region Char
+
+        public virtual void Encode(DeltaBlockState<char> state)
+        {
+            var list = state.List;
+            state.ListCount = list.Count;
+            state.Anchor = list[0];
+
+            var arr = new ushort[state.ListCount];
+            Parallel.For(0, state.ListCount, i =>
+            {
+                arr[i] = list[i];
+            });
+
+            // Aliased state with granularity set to 1
+            var sstate = new DeltaBlockState<ushort>(arr, state.Flags.Level)
+            {
+                Anchor = list[0],
+                Factor = 1,
+                Finisher = state.Finisher,
+                BlockIndex = state.BlockIndex,
+            };
+            Encode(sstate);
+            state.Anchor = (char)sstate.Anchor;
+            state.Factor = (char)1;
+            state.Bytes = sstate.Bytes;
+            state.ByteCount = sstate.ByteCount;
+        }
+
+        public virtual void Decode(DeltaBlockState<char> state)
+        {
+            var sstate = new DeltaBlockState<ushort>(state.Bytes, state.Finisher, state.BlockIndex)
+            {
+                ListCount = state.ListCount,
+                Anchor = state.Anchor,
+                Factor = state.Factor,
+                Finisher = state.Finisher,
+                BlockIndex = state.BlockIndex,
+                Flags = { Level = state.Flags.Level },
+            };
+            Decode(sstate);
+            var arr = sstate.List;
+
+            var list = new char[arr.Count];
+            list[0] = state.Anchor;
+            Parallel.For(0, arr.Count, i =>
+            {
+                list[i] = (char)arr[i];
+            });
+
+            state.List = list;
+        }
+
+        #endregion // Char
+
+        #region String
+
+        public virtual void Encode(BlockState<string> state)
+        {
+            var list = state.List;
+            state.ListCount = list.Count;
+            state.Anchor = list[0];
+
+            using (var ms = new MemoryStream(list.Count))
+            {
+                var writer = new BinaryWriter(ms);
+                for (var i = 0; i < list.Count; i++)
+                {
+                    writer.Write(list[i]);
+                }
+                var bytes = state.Finisher.EncodeToStream(ms, state.Flags.Level).ToArray();
+                state.Bytes = bytes;
+                state.ByteCount = bytes.Length;
+            }
+        }
+
+        public virtual void Decode(BlockState<string> state)
+        {
+            var bytes = state.Finisher.DecodeByte(state.Bytes);
+
+            var list = new List<string>(state.Bytes.Length);
+            using (var ms = new MemoryStream((byte[])bytes))
+            {
+                var reader = new BinaryReader(ms);
+                for (var i = 0; i < state.ListCount; i++)
+                {
+                    list.Add(reader.ReadString());
+                }
+                state.List = list;
+                state.ListCount = list.Count;
+            }
+        }
+
+        #endregion // String
     }
 }

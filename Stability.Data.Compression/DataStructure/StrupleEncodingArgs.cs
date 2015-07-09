@@ -9,1455 +9,737 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
+
 using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 
 namespace Stability.Data.Compression.DataStructure
 {
-    /// <summary>
-    /// The generic Struple (structure tuple) types require an ability
-    /// to specify arguments for multiple fields. This family of generic
-    /// argument classes make it easier to pass the required information.
-    /// </summary>
-    public abstract class StrupleEncodingArgs
+    public interface IStrupleEncodingArgs { }
+
+    public abstract class StrupleEncodingArgs : MultiFieldEncodingArgs, IStrupleEncodingArgs
     {
-        public const CompressionLevel DefaultLevel = CompressionLevel.Optimal;
-        public const Monotonicity DefaultMonotonicity = Monotonicity.None;
-
-        /// <summary>
-        /// Resets compression level for all fields.
-        /// </summary>
-        public abstract void ResetLevel(CompressionLevel level = DefaultLevel);
-
-        /// <summary>
-        /// Resets monotonicity for all fields. This should be used with extreme
-        /// caution because some transforms may have trouble if the field (vector)
-        /// isn't actually monotonic. Generally, you should only use this to reset
-        /// to <see cref="Monotonicity.None"/>. You can do this by not providing an
-        /// argument. Optimizations related to this setting will usually be negligible.
-        /// </summary>
-        public abstract void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity);
-
-        /// <summary>
-        /// Allows clients to get the count of elements without casting to the generic list type.
-        /// </summary>
-        public abstract int ListCount { get; }
-
-        /// <summary>
-        /// The number of blocks that will encoded/decoded in parallel.
-        /// </summary>
-        public int NumBlocks { get; set; }
+        protected StrupleEncodingArgs(int numBlocks = 1, object custom = null)
+            : base(numBlocks, custom)
+        {
+        }
     }
 
     public class StrupleEncodingArgs<T> : StrupleEncodingArgs
-        where T : struct
-    {
+     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T>>())
         {
         }
 
-        public StrupleEncodingArgs(IList<T> list, int numBlocks = 1, CompressionLevel level = DefaultLevel,
-            T? granularity = default(T?), Monotonicity monotonicity = DefaultMonotonicity)
+        public StrupleEncodingArgs(IList<Struple<T>> data, 
+            int numBlocks = 1, 
+            CompressionLevel level = DefaultLevel, 
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            List = list;
-            NumBlocks = numBlocks;
-            Level = level;
-            Granularity = granularity;
-            Monotonicity = monotonicity;
-        }
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level = level;
+            if (data == null)
+                throw new ArgumentNullException("data");
+
+            Data = data;
+
+            Granularities = new object[] { default(T) };
+
+            Levels = new CompressionLevel[1];
+            Monotonicities = new Monotonicity[1];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity = monotonicity;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<T> List { get; set; }
-        public CompressionLevel Level { get; set; }
-        public T? Granularity { get; set; }
-        public Monotonicity Monotonicity { get; set; }
+        public IList<Struple<T>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2> : StrupleEncodingArgs
-    where T1 : struct
-    where T2 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1,T2>> list, 
+        public StrupleEncodingArgs(IList<Struple<T1,T2>> data, 
             int numBlocks = 1, 
             CompressionLevel level = DefaultLevel, 
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
+            Granularities = new object[] { default(T1), default(T2) };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[2];
+            Monotonicities = new Monotonicity[2];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
+        public IList<Struple<T1, T2>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3>> data, 
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
+            Granularities = new object[] { default(T1), default(T2), default(T3) };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[3];
+            Monotonicities = new Monotonicity[3];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
+        public IList<Struple<T1, T2, T3>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
+            Granularities = new object[] { default(T1), default(T2), default(T3), default(T4) };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[4];
+            Monotonicities = new Monotonicity[4];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
+        public IList<Struple<T1, T2, T3, T4>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5>> data, 
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
+            Granularities = new object[] { default(T1), default(T2), default(T3), default(T4), default(T5) };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[5];
+            Monotonicities = new Monotonicity[5];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
+            Granularities = new object[] { default(T1), default(T2), default(T3), default(T4), default(T5), default(T6) };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[6];
+            Monotonicities = new Monotonicity[6];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7)
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[7];
+            Monotonicities = new Monotonicity[7];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8>> data, 
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[8];
+            Monotonicities = new Monotonicity[8];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[9];
+            Monotonicities = new Monotonicity[9];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
-        where T10 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
-            Granularity10 = default(T10?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[10];
+            Monotonicities = new Monotonicity[10];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-            Level10 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-            Monotonicity10 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-        public T10? Granularity10 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-        public CompressionLevel Level10 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
-        public Monotonicity Monotonicity10 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
-        where T10 : struct
-        where T11 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
-            Granularity10 = default(T10?);
-            Granularity11 = default(T11?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[11];
+            Monotonicities = new Monotonicity[11];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-            Level10 = level;
-            Level11 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-            Monotonicity10 = monotonicity;
-            Monotonicity11 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-        public T10? Granularity10 { get; set; }
-        public T11? Granularity11 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-        public CompressionLevel Level10 { get; set; }
-        public CompressionLevel Level11 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
-        public Monotonicity Monotonicity10 { get; set; }
-        public Monotonicity Monotonicity11 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
-        where T10 : struct
-        where T11 : struct
-        where T12 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
-            Granularity10 = default(T10?);
-            Granularity11 = default(T11?);
-            Granularity12 = default(T12?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+                default(T12),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[12];
+            Monotonicities = new Monotonicity[12];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-            Level10 = level;
-            Level11 = level;
-            Level12 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-            Monotonicity10 = monotonicity;
-            Monotonicity11 = monotonicity;
-            Monotonicity12 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-        public T10? Granularity10 { get; set; }
-        public T11? Granularity11 { get; set; }
-        public T12? Granularity12 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-        public CompressionLevel Level10 { get; set; }
-        public CompressionLevel Level11 { get; set; }
-        public CompressionLevel Level12 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
-        public Monotonicity Monotonicity10 { get; set; }
-        public Monotonicity Monotonicity11 { get; set; }
-        public Monotonicity Monotonicity12 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
-        where T10 : struct
-        where T11 : struct
-        where T12 : struct
-        where T13 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>>())
         {
         }
 
         public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> list,
+            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
-            Granularity10 = default(T10?);
-            Granularity11 = default(T11?);
-            Granularity12 = default(T12?);
-            Granularity13 = default(T13?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+                default(T12),
+                default(T13),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[13];
+            Monotonicities = new Monotonicity[13];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-            Level10 = level;
-            Level11 = level;
-            Level12 = level;
-            Level13 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-            Monotonicity10 = monotonicity;
-            Monotonicity11 = monotonicity;
-            Monotonicity12 = monotonicity;
-            Monotonicity13 = monotonicity;
-        }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> Data { get; set; }
 
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-        public T10? Granularity10 { get; set; }
-        public T11? Granularity11 { get; set; }
-        public T12? Granularity12 { get; set; }
-        public T13? Granularity13 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-        public CompressionLevel Level10 { get; set; }
-        public CompressionLevel Level11 { get; set; }
-        public CompressionLevel Level12 { get; set; }
-        public CompressionLevel Level13 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
-        public Monotonicity Monotonicity10 { get; set; }
-        public Monotonicity Monotonicity11 { get; set; }
-        public Monotonicity Monotonicity12 { get; set; }
-        public Monotonicity Monotonicity13 { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
-        where T10 : struct
-        where T11 : struct
-        where T12 : struct
-        where T13 : struct
-        where T14 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
-            Granularity10 = default(T10?);
-            Granularity11 = default(T11?);
-            Granularity12 = default(T12?);
-            Granularity13 = default(T13?);
-            Granularity14 = default(T14?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+                default(T12),
+                default(T13),
+                default(T14),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[14];
+            Monotonicities = new Monotonicity[14];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
-        {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-            Level10 = level;
-            Level11 = level;
-            Level12 = level;
-            Level13 = level;
-            Level14 = level;
-        }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
-        {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-            Monotonicity10 = monotonicity;
-            Monotonicity11 = monotonicity;
-            Monotonicity12 = monotonicity;
-            Monotonicity13 = monotonicity;
-            Monotonicity14 = monotonicity;
-        }
-
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> List { get; set; }
-
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-        public T10? Granularity10 { get; set; }
-        public T11? Granularity11 { get; set; }
-        public T12? Granularity12 { get; set; }
-        public T13? Granularity13 { get; set; }
-        public T14? Granularity14 { get; set; }
-
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-        public CompressionLevel Level10 { get; set; }
-        public CompressionLevel Level11 { get; set; }
-        public CompressionLevel Level12 { get; set; }
-        public CompressionLevel Level13 { get; set; }
-        public CompressionLevel Level14 { get; set; }
-
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
-        public Monotonicity Monotonicity10 { get; set; }
-        public Monotonicity Monotonicity11 { get; set; }
-        public Monotonicity Monotonicity12 { get; set; }
-        public Monotonicity Monotonicity13 { get; set; }
-        public Monotonicity Monotonicity14 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> Data { get; set; }
     }
 
     public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> : StrupleEncodingArgs
-        where T1 : struct
-        where T2 : struct
-        where T3 : struct
-        where T4 : struct
-        where T5 : struct
-        where T6 : struct
-        where T7 : struct
-        where T8 : struct
-        where T9 : struct
-        where T10 : struct
-        where T11 : struct
-        where T12 : struct
-        where T13 : struct
-        where T14 : struct
-        where T15 : struct
     {
         public StrupleEncodingArgs()
-            : this(null)
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>>())
         {
         }
 
-        public StrupleEncodingArgs(
-            IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> list,
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> data,
             int numBlocks = 1,
             CompressionLevel level = DefaultLevel,
-            Monotonicity monotonicity = DefaultMonotonicity)
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            if (list == null)
-                throw new ArgumentNullException("list");
+            if (data == null)
+                throw new ArgumentNullException("data");
 
-            List = list;
-            NumBlocks = numBlocks;
+            Data = data;
 
-            Granularity1 = default(T1?);
-            Granularity2 = default(T2?);
-            Granularity3 = default(T3?);
-            Granularity4 = default(T4?);
-            Granularity5 = default(T5?);
-            Granularity6 = default(T6?);
-            Granularity7 = default(T7?);
-            Granularity8 = default(T8?);
-            Granularity9 = default(T9?);
-            Granularity10 = default(T10?);
-            Granularity11 = default(T11?);
-            Granularity12 = default(T12?);
-            Granularity13 = default(T13?);
-            Granularity14 = default(T14?);
-            Granularity15 = default(T15?);
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+                default(T12),
+                default(T13),
+                default(T14),
+                default(T15),
+            };
 
-            ResetLevel(level);
-            ResetMonotonicity(monotonicity);
+            Levels = new CompressionLevel[15];
+            Monotonicities = new Monotonicity[15];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override void ResetLevel(CompressionLevel level = DefaultLevel)
+        public override dynamic DynamicData { get { return Data; } }
+
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> Data { get; set; }
+    }
+
+    public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> : StrupleEncodingArgs
+    {
+        public StrupleEncodingArgs()
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>>())
         {
-            Level1 = level;
-            Level2 = level;
-            Level3 = level;
-            Level4 = level;
-            Level5 = level;
-            Level6 = level;
-            Level7 = level;
-            Level8 = level;
-            Level9 = level;
-            Level10 = level;
-            Level11 = level;
-            Level12 = level;
-            Level13 = level;
-            Level14 = level;
-            Level15 = level;
         }
 
-        public override void ResetMonotonicity(Monotonicity monotonicity = DefaultMonotonicity)
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>> data,
+            int numBlocks = 1,
+            CompressionLevel level = DefaultLevel,
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
         {
-            Monotonicity1 = monotonicity;
-            Monotonicity2 = monotonicity;
-            Monotonicity3 = monotonicity;
-            Monotonicity4 = monotonicity;
-            Monotonicity5 = monotonicity;
-            Monotonicity6 = monotonicity;
-            Monotonicity7 = monotonicity;
-            Monotonicity8 = monotonicity;
-            Monotonicity9 = monotonicity;
-            Monotonicity10 = monotonicity;
-            Monotonicity11 = monotonicity;
-            Monotonicity12 = monotonicity;
-            Monotonicity13 = monotonicity;
-            Monotonicity14 = monotonicity;
-            Monotonicity15 = monotonicity;
+            if (data == null)
+                throw new ArgumentNullException("data");
+
+            Data = data;
+
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+                default(T12),
+                default(T13),
+                default(T14),
+                default(T15),
+                default(T16),
+            };
+
+            Levels = new CompressionLevel[16];
+            Monotonicities = new Monotonicity[16];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
         }
 
-        public override int ListCount { get { return List == null ? 0 : List.Count; } }
-        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> List { get; set; }
+        public override dynamic DynamicData { get { return Data; } }
 
-        public T1? Granularity1 { get; set; }
-        public T2? Granularity2 { get; set; }
-        public T3? Granularity3 { get; set; }
-        public T4? Granularity4 { get; set; }
-        public T5? Granularity5 { get; set; }
-        public T6? Granularity6 { get; set; }
-        public T7? Granularity7 { get; set; }
-        public T8? Granularity8 { get; set; }
-        public T9? Granularity9 { get; set; }
-        public T10? Granularity10 { get; set; }
-        public T11? Granularity11 { get; set; }
-        public T12? Granularity12 { get; set; }
-        public T13? Granularity13 { get; set; }
-        public T14? Granularity14 { get; set; }
-        public T15? Granularity15 { get; set; }
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>> Data { get; set; }
+    }
 
-        public CompressionLevel Level1 { get; set; }
-        public CompressionLevel Level2 { get; set; }
-        public CompressionLevel Level3 { get; set; }
-        public CompressionLevel Level4 { get; set; }
-        public CompressionLevel Level5 { get; set; }
-        public CompressionLevel Level6 { get; set; }
-        public CompressionLevel Level7 { get; set; }
-        public CompressionLevel Level8 { get; set; }
-        public CompressionLevel Level9 { get; set; }
-        public CompressionLevel Level10 { get; set; }
-        public CompressionLevel Level11 { get; set; }
-        public CompressionLevel Level12 { get; set; }
-        public CompressionLevel Level13 { get; set; }
-        public CompressionLevel Level14 { get; set; }
-        public CompressionLevel Level15 { get; set; }
+    public class StrupleEncodingArgs<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> : StrupleEncodingArgs
+    {
+        public StrupleEncodingArgs()
+            : this(new List<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>>())
+        {
+        }
 
-        public Monotonicity Monotonicity1 { get; set; }
-        public Monotonicity Monotonicity2 { get; set; }
-        public Monotonicity Monotonicity3 { get; set; }
-        public Monotonicity Monotonicity4 { get; set; }
-        public Monotonicity Monotonicity5 { get; set; }
-        public Monotonicity Monotonicity6 { get; set; }
-        public Monotonicity Monotonicity7 { get; set; }
-        public Monotonicity Monotonicity8 { get; set; }
-        public Monotonicity Monotonicity9 { get; set; }
-        public Monotonicity Monotonicity10 { get; set; }
-        public Monotonicity Monotonicity11 { get; set; }
-        public Monotonicity Monotonicity12 { get; set; }
-        public Monotonicity Monotonicity13 { get; set; }
-        public Monotonicity Monotonicity14 { get; set; }
-        public Monotonicity Monotonicity15 { get; set; }
+        public StrupleEncodingArgs(IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>> data,
+            int numBlocks = 1,
+            CompressionLevel level = DefaultLevel,
+            Monotonicity monotonicity = DefaultMonotonicity,
+            object custom = null)
+            : base(numBlocks, custom)
+        {
+            if (data == null)
+                throw new ArgumentNullException("data");
+
+            Data = data;
+
+            Granularities = new object[]
+            {
+                default(T1), 
+                default(T2), 
+                default(T3), 
+                default(T4), 
+                default(T5), 
+                default(T6), 
+                default(T7),
+                default(T8),
+                default(T9),
+                default(T10),
+                default(T11),
+                default(T12),
+                default(T13),
+                default(T14),
+                default(T15),
+                default(T16),
+                default(T17),
+            };
+
+            Levels = new CompressionLevel[17];
+            Monotonicities = new Monotonicity[17];
+
+            ResetLevels(level);
+            ResetMonotonicities(monotonicity);
+        }
+
+        public override dynamic DynamicData { get { return Data; } }
+
+        public IList<Struple<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>> Data { get; set; }
     }
 }

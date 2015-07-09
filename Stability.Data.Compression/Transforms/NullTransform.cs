@@ -51,6 +51,10 @@ namespace Stability.Data.Compression.Transforms
                 {typeof (float), o => Encode((DeltaBlockState<float>) o)},
                 {typeof (double), o => Encode((DeltaBlockState<double>) o)},
                 {typeof (decimal), o => Encode((DeltaBlockState<decimal>) o)},
+                // Char
+                {typeof (char), o => Encode((DeltaBlockState<char>) o)},
+                // String
+                {typeof (string), o => Encode((BlockState<string>) o)},
             };
             _decodeFuncMap = new Dictionary
                 <Type, Action<object>>
@@ -72,6 +76,10 @@ namespace Stability.Data.Compression.Transforms
                 {typeof (float), o => Decode((DeltaBlockState<float>) o)},
                 {typeof (double), o => Decode((DeltaBlockState<double>) o)},
                 {typeof (decimal), o => Decode((DeltaBlockState<decimal>) o)},
+                // Char
+                {typeof (char), o => Decode((DeltaBlockState<char>) o)},
+                // String
+                {typeof (string), o => Decode((BlockState<string>) o)},
             };
         }
 
@@ -82,8 +90,7 @@ namespace Stability.Data.Compression.Transforms
         /// <summary>
         /// This is actually a "Fake" generic version of the Transpose method.
         /// </summary>
-        public virtual void Encode<T>(DeltaBlockState<T> state)
-            where T : struct
+        public virtual void Encode<T>(BlockState<T> state)
         {
             try
             {
@@ -99,8 +106,7 @@ namespace Stability.Data.Compression.Transforms
         /// <summary>
         /// This is actually a "Fake" generic version of the Transpose method.
         /// </summary>
-        public virtual void Decode<T>(DeltaBlockState<T> state)
-            where T : struct
+        public virtual void Decode<T>(BlockState<T> state)
         {
             try
             {
@@ -521,5 +527,59 @@ namespace Stability.Data.Compression.Transforms
         }
 
         #endregion // Decimal
+
+        #region Char
+
+        public virtual void Encode(DeltaBlockState<char> state)
+        {
+            if (state.Finisher == null)
+                throw new ArgumentException("A finisher is required.", "state");
+
+            var list = state.List;
+            state.ListCount = list.Count;
+            state.Anchor = list[0];
+            state.Factor = (char) 0;
+
+            state.Bytes = state.Finisher.Encode(list, state.Flags.Level);
+            state.ByteCount = state.Bytes.Length;
+        }
+
+        public virtual void Decode(DeltaBlockState<char> state)
+        {
+            if (state.Finisher == null)
+                throw new ArgumentException("A finisher is required.", "state");
+
+            var list = state.Finisher.DecodeChar(state.Bytes);
+            state.List = list;
+        }
+
+        #endregion // Char
+
+        #region String
+
+        public virtual void Encode(BlockState<string> state)
+        {
+            if (state.Finisher == null)
+                throw new ArgumentException("A finisher is required.", "state");
+
+            var list = state.List;
+            state.ListCount = list.Count;
+            state.Anchor = list[0];
+
+            state.Bytes = state.Finisher.Encode(list, state.Flags.Level);
+            state.ByteCount = state.Bytes.Length;
+        }
+
+        public virtual void Decode(BlockState<string> state)
+        {
+            if (state.Finisher == null)
+                throw new ArgumentException("A finisher is required.", "state");
+
+            var list = state.Finisher.DecodeString(state.Bytes);
+            state.List = list;
+        }
+
+        #endregion // String
+
     }
 }

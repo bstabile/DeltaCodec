@@ -10,18 +10,31 @@
 
 #endregion // License
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Stability.Data.Compression.Utility;
 
 namespace Stability.Data.Compression.TestUtility
 {
     public class CodecTestStatistics
     {
-        public CodecTestStatistics(Type dataType, int listCount)
+        public CodecTestStatistics(Type dataType, int listCount, object list = null)
         {
             DataType = dataType;
-            BytesForType = DeltaUtility.GetSizeOfIntrinsicType(dataType);
             ListCount = listCount;
-            RawBytes = BytesForType*ListCount;
+            if (dataType == typeof(string))
+            {
+                if (list == null)
+                    throw new ArgumentNullException("list", "For string lists you must supply the list itself.");
+                var charCount = ((IList<string>) list).Sum(s => s.Length);
+                RawBytes = charCount * 2;
+                BytesForType = (int) (RawBytes / listCount);
+            }
+            else
+            {
+                BytesForType = DeltaUtility.GetSizeOfType(dataType);
+                RawBytes = BytesForType * ListCount;
+            }
         }
 
         // The following fields don't change.

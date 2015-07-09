@@ -13,14 +13,21 @@ using System;
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
-using Stability.Data.Compression.Utility;
 
 namespace Stability.Data.Compression.TestUtility
 {
     public static class TestDisplay
     {
         #region Constants and Static Fields
+
+        private static int _defaultSampleCount = 10;
+        public static int DefaultSampleCount
+        {
+            get { return _defaultSampleCount; }
+            set { _defaultSampleCount = value > 0 ? value : 0; }
+        }
 
         private const string SummaryLineFormatString = "{0, 13} {1, 13} {2, 13}{3, 13}";
 
@@ -272,7 +279,42 @@ namespace Stability.Data.Compression.TestUtility
 
         public static string ToResultsLineString(ICodecTest t)
         {
-            var fm = t.FactorMode == FactorMode.Granular ? "Gran" : t.FactorMode.ToString();
+            var fm = "None";
+            if (t is CodecStructTest)
+            {
+                var mode = ((CodecStructTest)t).FactorMode;
+                fm = mode == FactorMode.Auto ? "Auto" : mode == FactorMode.Granular ? "Gran" : "None";
+            }
+
+            var level = t.Level == CompressionLevel.NoCompression
+                ? "None"
+                : t.Level == CompressionLevel.Fastest
+                    ? "Fast"
+                    : "Opt";
+
+            return string.Format(ResultsLineFormatString,
+                t.DisplayName,
+                fm, // FactorMode
+                level, // CompressionLevel
+                t.NumBlocks,
+                t.Stats.EncodedBytes.ToString("N0"),
+                t.Stats.Ratio.ToString("F2"),
+                t.Stats.Multiple.ToString("F2"),
+                t.Stats.ElapsedEncode.TotalMilliseconds.ToString("N0"),
+                t.Stats.ElapsedDecode.TotalMilliseconds.ToString("N0"),
+                t.Stats.CmbsEncode.ToString("N2"),
+                t.Stats.CmbsDecode.ToString("N2"),
+                t.Stats.SpaceRank.ToString("P1"),
+                t.Stats.TimeRankEncode.ToString("P1"),
+                t.Stats.TimeRankDecode.ToString("P1"),
+                t.Stats.Balance.ToString("P1"),
+                t.Stats.EntropyOut.ToString("P2")
+                );
+        }
+
+        public static string ToResultsLineString(CodecTest t)
+        {
+            const FactorMode fm = FactorMode.None;
             var level = t.Level == CompressionLevel.NoCompression
                 ? "None"
                 : t.Level == CompressionLevel.Fastest
@@ -328,12 +370,24 @@ namespace Stability.Data.Compression.TestUtility
             Console.WriteLine(s);
         }
 
-        public static void PrintSamples<T>(IList<T> list, string valueFormat = null)
+        public static void PrintSamples<T>(IList<T> list, string valueFormat = null, int start = 0, int count = 10)
             where T : struct, IComparable<T>, IEquatable<T>
         {
-            Console.WriteLine("\nData Samples:");
-            var samples = BitPrinter.PrintSamples(list, valueFormat);
+            Console.WriteLine("\nData Samples: {0}", typeof(T).Name);
+            var samples = BitPrinter.PrintSamples(list, valueFormat, start: 0, count: count);
             Console.WriteLine(samples);
+        }
+
+        public static void PrintClassSamples<T>(IList<T> list, string valueFormat = null, int start = 0, int count = 10)
+            where T : class, IComparable<T>, IEquatable<T>
+        {
+            Console.WriteLine("\nData Samples: {0}", typeof(T).Name);
+            var sb = new StringBuilder();
+            for (var i = start; i < start + count; i++)
+            {
+                sb.AppendLine(list[i].ToString());
+            }
+            Console.WriteLine(sb.ToString());
         }
 
         public static string PrintBestOfRunResults(CodecTestGroup runners)
@@ -363,7 +417,6 @@ namespace Stability.Data.Compression.TestUtility
             for (var i = 0; i < sortedBestOfRuns.Count; i++)
             {
                 var test = sortedBestOfRuns[i];
-                //var line = test.ToResultsLineString();
                 var line = ToResultsLineString(test);
                 sb = sb.AppendLine(line);
                 if (i != sortedBestOfRuns.Count - 1)

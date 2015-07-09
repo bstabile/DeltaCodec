@@ -119,7 +119,7 @@ namespace Stability.Data.Compression.ThirdParty.Internal.SharpZipLib.BZip2
 		/// Valid block sizes are in the range 1..9, with 1 giving 
 		/// the lowest compression and 9 the highest.
 		/// </remarks>
-		public BZip2OutputStream(Stream stream, int blockSize)
+		public BZip2OutputStream(Stream stream, int blockSize = 9)
 		{
 			BsSetStream(stream);
 			
@@ -136,6 +136,7 @@ namespace Stability.Data.Compression.ThirdParty.Internal.SharpZipLib.BZip2
 			Initialize();
 			InitBlock();
 		}
+
 		#endregion
 		
 		#region Destructor
