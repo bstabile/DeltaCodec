@@ -9,7 +9,6 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
-
 using System;
 using Stability.Data.Compression.Utility;
 

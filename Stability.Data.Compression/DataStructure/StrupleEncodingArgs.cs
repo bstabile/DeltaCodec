@@ -1,7 +1,7 @@
 ﻿#region License
 
 // Namespace : Stability.Data.Compression.DataStructure
-// FileName  : EncodingArgs.cs
+// FileName  : StrupleEncodingArgs.cs
 // Created   : 2015-6-15
 // Author    : Bennett R. Stabile 
 // Copyright : Stability Systems LLC, 2015
@@ -9,7 +9,6 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
-
 using System;
 using System.Collections.Generic;
 using System.IO.Compression;

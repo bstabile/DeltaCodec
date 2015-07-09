@@ -17,7 +17,6 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // Derivative Work License (Stability.Data.Compression.ThirdParty)
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

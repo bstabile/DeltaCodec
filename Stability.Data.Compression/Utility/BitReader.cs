@@ -1,3 +1,14 @@
+#region License
+
+// Namespace : Stability.Data.Compression.Utility
+// FileName  : BitReader.cs
+// Created   : 2015-6-18
+// Author    : Bennett R. Stabile 
+// Copyright : Stability Systems LLC, 2015
+// License   : GPL v3
+// Website   : http://DeltaCodec.CodePlex.com
+
+#endregion // License
 using System;
 using System.IO;
 

@@ -9,7 +9,6 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
-
 namespace Stability.Data.Compression.DataStructure
 {
     public interface IStruple { }

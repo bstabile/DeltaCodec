@@ -8,7 +8,7 @@
 //             of the third-party libraries. Those licenses (if more restrictive than
 //             GPL v3) are meant to override.
 //
-// Namespace : Stability.Data.Compression.ThirdParty.Properties
+// Namespace : Stability.Data.Compression.ThirdParty
 // FileName  : AssemblyInfo.cs
 // Created   : 2015-4-20
 // Author    : Bennett R. Stabile (Original and Derivative Work)

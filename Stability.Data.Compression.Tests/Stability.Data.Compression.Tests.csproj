@@ -85,9 +85,7 @@
     <Content Include="Data\ReadMe_Data.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\Data\Stability.Data.Compression\Stability.Data.Compression.licenseheader">
-      <Link>Stability.Data.Compression.licenseheader</Link>
-    </None>
+    <None Include="Stability.Data.Compression.licenseheader" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

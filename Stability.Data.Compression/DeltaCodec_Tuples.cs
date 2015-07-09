@@ -2,14 +2,13 @@
 
 // Namespace : Stability.Data.Compression
 // FileName  : DeltaCodec_Tuples.cs
-// Created   : 2015-6-14
+// Created   : 2015-7-2
 // Author    : Bennett R. Stabile 
 // Copyright : Stability Systems LLC, 2015
 // License   : GPL v3
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

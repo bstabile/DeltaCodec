@@ -1,4 +1,15 @@
-﻿using System.Collections.Generic;
+﻿#region License
+
+// Namespace : Stability.Data.Compression.Utility
+// FileName  : BlockState.cs
+// Created   : 2015-6-26
+// Author    : Bennett R. Stabile 
+// Copyright : Stability Systems LLC, 2015
+// License   : GPL v3
+// Website   : http://DeltaCodec.CodePlex.com
+
+#endregion // License
+using System.Collections.Generic;
 using System.IO.Compression;
 using Stability.Data.Compression.Finishers;
 using Stability.Data.Compression.Transforms;

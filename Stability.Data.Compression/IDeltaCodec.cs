@@ -9,7 +9,6 @@
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
-
 using System.Collections.Generic;
 using System.IO.Compression;
 using System.Runtime.Serialization;

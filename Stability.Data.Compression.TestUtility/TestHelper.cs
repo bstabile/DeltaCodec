@@ -2,14 +2,13 @@
 
 // Namespace : Stability.Data.Compression.TestUtility
 // FileName  : TestHelper.cs
-// Created   : 2015-5-16
+// Created   : 2015-7-3
 // Author    : Bennett R. Stabile 
 // Copyright : Stability Systems LLC, 2015
-// License   : All Rights Reserved
+// License   : GPL v3
 // Website   : http://DeltaCodec.CodePlex.com
 
 #endregion // License
-
 using System;
 using System.Collections.Generic;
 using System.Threading;

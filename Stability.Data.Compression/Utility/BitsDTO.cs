@@ -1,8 +1,8 @@
 ﻿#region License
 
 // Namespace : Stability.Data.Compression.Utility
-// FileName  : BitsDT.cs
-// Created   : 2015-4-24
+// FileName  : BitsDTO.cs
+// Created   : 2015-6-19
 // Author    : Bennett R. Stabile 
 // Copyright : Stability Systems LLC, 2015
 // License   : GPL v3
