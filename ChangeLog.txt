@@ -3,6 +3,17 @@ DeltaCodec ChangeLog
 Bennett R. Stabile (BRS)
 Stability Systems LLC
 
+2015-07-09
+v1.4 - Numerous breaking changes related to multi-field structures (Struples and Tuples), as
+       well as to the various related "EncodingArgs" types. Added new data types Char and
+       String, bringing the total number of supported simple types to 17. Also added support
+       for encoding Dictionary<TKey, TValue> for any supported simple types. Changed the way
+       test groups are handled. More changes in testing will be included in the next release.
+       Documentation has not yet been updated to reflect these various changes. There was a
+       notable improvement to the benchmark (RWC) performance results for Double and Float 
+       types which has not yet been reflected in the comparison test results. Those will be
+       updated with the rest of the documentation in the near future.
+
 2015-06-20
 v1.3 - Added Boolean and DateTimeOffset to the list of data types supported. Changed Struple
        tests so that all 15 supported types are tested at the same time in "Struple_15".

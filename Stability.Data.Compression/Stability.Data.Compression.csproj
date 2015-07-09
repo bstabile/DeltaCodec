@@ -166,9 +166,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\ChangeLog.txt">
-      <Link>ChangeLog.txt</Link>
-    </Content>
     <Content Include="README.txt" />
   </ItemGroup>
   <ItemGroup>
