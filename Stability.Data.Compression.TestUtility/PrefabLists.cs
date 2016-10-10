@@ -32,7 +32,7 @@ namespace Stability.Data.Compression.TestUtility
             (
                 TimeSeriesProvider.RandomDateTimeOffsetsBySeconds(dataLength, startDate, min:0, max:10, seed:0, offsetChange: offsetChange),
                 startValue: startDate,
-                granularity: DateTime.MinValue.AddSeconds(1),
+                granularity: DateTimeOffset.MinValue.AddSeconds(1),
                 monotonicity: Monotonicity.None // Can't be sure when offset changes arbitrarily
             );
             DateTimes = new PrefabList<DateTime>

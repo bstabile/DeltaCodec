@@ -111,11 +111,13 @@
     <Compile Include="AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DataStructure\DynamicEncodingArgs.cs" />
     <Compile Include="DataStructure\EncodingArgs.cs" />
     <Compile Include="DataStructure\MapEncodingArgs.cs" />
     <Compile Include="DataStructure\MultiFieldEncodingArgs.cs" />
     <Compile Include="DataStructure\TupleEncodingArgs.cs" />
     <Compile Include="DeltaCodec_Dictionary.cs" />
+    <Compile Include="DeltaCodec_Dynamic.cs" />
     <Compile Include="DeltaCodec_Structs.cs" />
     <Compile Include="DeltaCodec.cs" />
     <Compile Include="DeflateDeltaCodec.cs" />

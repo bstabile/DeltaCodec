@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="BitPrinter.cs" />
     <Compile Include="CodecTestGroup.cs" />
+    <Compile Include="DynamicFieldTest.cs" />
     <Compile Include="PrefabLists.cs" />
     <Compile Include="TestHelper.cs" />
     <Compile Include="MultiFieldTest.cs" />
